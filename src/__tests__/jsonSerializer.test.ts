@@ -1,6 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { gridToJson, jsonToGrid, validateDotArtJson } from "../utils/jsonSerializer";
-import type { PaletteEntry } from "../state/types";
+import {
+  gridToJson,
+  jsonToGrid,
+  validateDotArtJson,
+  layersToJson,
+  validateLayeredDotArtJson,
+  isLayeredJson,
+} from "../utils/jsonSerializer";
+import type { PaletteEntry, Layer } from "../state/types";
 
 describe("gridToJson", () => {
   it("converts grid and palette to DotArtJson", () => {
@@ -114,6 +121,16 @@ describe("validateDotArtJson", () => {
     });
     expect(result.valid).toBe(false);
   });
+
+  it("accepts valid layered JSON via validateDotArtJson", () => {
+    const result = validateDotArtJson({
+      palette: { R: "#FF0000" },
+      layers: [
+        { name: "Layer 1", visible: true, rows: ["R.", ".R"] },
+      ],
+    });
+    expect(result.valid).toBe(true);
+  });
 });
 
 describe("roundtrip", () => {
@@ -131,5 +148,90 @@ describe("roundtrip", () => {
     const result = jsonToGrid(json);
     expect(result.grid).toEqual(originalGrid);
     expect(result.size).toBe(3);
+  });
+});
+
+describe("layersToJson", () => {
+  it("converts layers and palette to LayeredDotArtJson", () => {
+    const layers: Layer[] = [
+      { name: "bg", visible: true, grid: [["R", "."], [".", "R"]] },
+      { name: "fg", visible: false, grid: [[".", "G"], ["G", "."]] },
+    ];
+    const palette: PaletteEntry[] = [
+      { key: "R", color: "#FF0000" },
+      { key: "G", color: "#00FF00" },
+      { key: "B", color: "#0000FF" },
+    ];
+    const json = layersToJson(layers, palette);
+    expect(json.palette).toEqual({ R: "#FF0000", G: "#00FF00" });
+    expect(json.layers).toHaveLength(2);
+    expect(json.layers[0]).toEqual({ name: "bg", visible: true, rows: ["R.", ".R"] });
+    expect(json.layers[1]).toEqual({ name: "fg", visible: false, rows: [".G", "G."] });
+  });
+
+  it("excludes unused palette entries across all layers", () => {
+    const layers: Layer[] = [
+      { name: "empty", visible: true, grid: [[".", "."], [".", "."]] },
+    ];
+    const palette: PaletteEntry[] = [{ key: "R", color: "#FF0000" }];
+    const json = layersToJson(layers, palette);
+    expect(json.palette).toEqual({});
+  });
+});
+
+describe("validateLayeredDotArtJson", () => {
+  it("accepts valid layered JSON", () => {
+    const result = validateLayeredDotArtJson({
+      palette: { R: "#FF0000", G: "#00FF00" },
+      layers: [
+        { name: "bg", visible: true, rows: ["R.", ".R"] },
+        { name: "fg", visible: true, rows: [".G", "G."] },
+      ],
+    });
+    expect(result.valid).toBe(true);
+  });
+
+  it("rejects empty layers array", () => {
+    const result = validateLayeredDotArtJson({
+      palette: { R: "#FF0000" },
+      layers: [],
+    });
+    expect(result.valid).toBe(false);
+  });
+
+  it("rejects layer with wrong size", () => {
+    const result = validateLayeredDotArtJson({
+      palette: { R: "#FF0000" },
+      layers: [
+        { name: "bg", visible: true, rows: ["R.", ".R"] },
+        { name: "fg", visible: true, rows: ["R"] },
+      ],
+    });
+    expect(result.valid).toBe(false);
+  });
+
+  it("rejects undefined key in layer rows", () => {
+    const result = validateLayeredDotArtJson({
+      palette: { R: "#FF0000" },
+      layers: [
+        { name: "bg", visible: true, rows: ["RX", ".R"] },
+      ],
+    });
+    expect(result.valid).toBe(false);
+  });
+});
+
+describe("isLayeredJson", () => {
+  it("returns true for layered JSON", () => {
+    expect(isLayeredJson({ palette: {}, layers: [] })).toBe(true);
+  });
+
+  it("returns false for flat JSON", () => {
+    expect(isLayeredJson({ palette: {}, rows: [] })).toBe(false);
+  });
+
+  it("returns false for non-object", () => {
+    expect(isLayeredJson(null)).toBe(false);
+    expect(isLayeredJson("string")).toBe(false);
   });
 });

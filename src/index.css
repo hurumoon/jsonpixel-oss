@@ -202,6 +202,110 @@ body,
   padding: 4px 10px;
 }
 
+/* Layer panel */
+.layer-panel {
+  padding-bottom: 8px;
+}
+
+.layer-buttons {
+  padding: 0 6px 4px;
+}
+
+.layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 6px;
+}
+
+.layer-entry {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  min-height: 30px;
+}
+
+.layer-entry:hover {
+  background: var(--surface2);
+}
+
+.layer-entry.active {
+  border-color: var(--accent);
+  background: var(--surface2);
+}
+
+.layer-visibility {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.layer-visibility.visible {
+  color: var(--accent);
+}
+
+.layer-name {
+  flex: 1;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.layer-name-input {
+  flex: 1;
+  padding: 1px 4px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  min-width: 0;
+}
+
+.layer-actions {
+  display: flex;
+  gap: 1px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.layer-action-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 10px;
+  padding: 1px 3px;
+  border-radius: 2px;
+  line-height: 1;
+}
+
+.layer-action-btn:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--surface2);
+}
+
+.layer-action-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.layer-action-btn.layer-delete:hover:not(:disabled) {
+  color: var(--danger);
+  background: rgba(240, 80, 80, 0.15);
+}
+
 /* Size control */
 .size-control {
   padding: 0 10px 8px;

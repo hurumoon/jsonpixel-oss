@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { editorReducer, createInitialState, createEmptyGrid } from "../state/editorReducer";
+import { editorReducer, createInitialState, createEmptyGrid, flattenLayers } from "../state/editorReducer";
 import type { EditorState } from "../state/types";
 
 function makeState(overrides: Partial<EditorState> = {}): EditorState {
@@ -11,6 +11,7 @@ describe("editorReducer", () => {
     it("sets a pixel and creates an undo entry", () => {
       const state = makeState();
       const next = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 0, key: "R" });
+      expect(next.layers[0].grid[0][0]).toBe("R");
       expect(next.grid[0][0]).toBe("R");
       expect(next.undoStack).toHaveLength(1);
       expect(next.redoStack).toHaveLength(0);
@@ -39,6 +40,8 @@ describe("editorReducer", () => {
           { row: 1, col: 1, key: "G" },
         ],
       });
+      expect(next.layers[0].grid[0][0]).toBe("R");
+      expect(next.layers[0].grid[1][1]).toBe("G");
       expect(next.grid[0][0]).toBe("R");
       expect(next.grid[1][1]).toBe("G");
       expect(next.undoStack).toHaveLength(1);
@@ -78,8 +81,9 @@ describe("editorReducer", () => {
       state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 0, key: "R" });
       state = editorReducer(state, { type: "SET_CANVAS_SIZE", size: 32 });
       expect(state.canvasSize).toBe(32);
-      expect(state.grid.length).toBe(32);
-      expect(state.grid[0].length).toBe(32);
+      expect(state.layers[0].grid.length).toBe(32);
+      expect(state.layers[0].grid[0].length).toBe(32);
+      expect(state.layers[0].grid[0][0]).toBe("R");
       expect(state.grid[0][0]).toBe("R");
     });
 
@@ -107,6 +111,8 @@ describe("editorReducer", () => {
         },
       });
       expect(next.canvasSize).toBe(3);
+      expect(next.layers).toHaveLength(1);
+      expect(next.layers[0].grid[0]).toEqual(["R", "G", "."]);
       expect(next.grid[0]).toEqual(["R", "G", "."]);
       expect(next.palette).toEqual([
         { key: "R", color: "#FF0000" },
@@ -134,10 +140,11 @@ describe("editorReducer", () => {
       expect(next).toBe(state);
     });
 
-    it("REMOVE_PALETTE_ENTRY clears affected pixels", () => {
+    it("REMOVE_PALETTE_ENTRY clears affected pixels in all layers", () => {
       let state = makeState();
       state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 0, key: "R" });
       state = editorReducer(state, { type: "REMOVE_PALETTE_ENTRY", key: "R" });
+      expect(state.layers[0].grid[0][0]).toBe(".");
       expect(state.grid[0][0]).toBe(".");
       expect(state.palette.find((p) => p.key === "R")).toBeUndefined();
     });
@@ -182,11 +189,12 @@ describe("editorReducer", () => {
   });
 
   describe("CLEAR_CANVAS", () => {
-    it("clears all pixels to empty and creates undo entry", () => {
+    it("clears active layer pixels and creates undo entry", () => {
       let state = makeState();
       state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 0, key: "R" });
       state = editorReducer(state, { type: "SET_PIXEL", row: 1, col: 1, key: "G" });
       const next = editorReducer(state, { type: "CLEAR_CANVAS" });
+      expect(next.layers[0].grid.every((row) => row.every((c) => c === "."))).toBe(true);
       expect(next.grid.every((row) => row.every((c) => c === "."))).toBe(true);
       expect(next.undoStack.length).toBe(state.undoStack.length + 1);
       expect(next.redoStack).toHaveLength(0);
@@ -216,6 +224,208 @@ describe("editorReducer", () => {
         [".", ".", "."],
         [".", ".", "."],
       ]);
+    });
+  });
+});
+
+describe("layer operations", () => {
+  describe("ADD_LAYER", () => {
+    it("adds a new empty layer and sets it active", () => {
+      const state = makeState();
+      const next = editorReducer(state, { type: "ADD_LAYER" });
+      expect(next.layers).toHaveLength(2);
+      expect(next.activeLayerIndex).toBe(1);
+      expect(next.layers[1].name).toBe("Layer 2");
+      expect(next.layers[1].visible).toBe(true);
+      expect(next.layers[1].grid.every((row) => row.every((c) => c === "."))).toBe(true);
+    });
+  });
+
+  describe("REMOVE_LAYER", () => {
+    it("removes a layer (not the last one)", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      expect(state.layers).toHaveLength(2);
+      const next = editorReducer(state, { type: "REMOVE_LAYER", index: 1 });
+      expect(next.layers).toHaveLength(1);
+      expect(next.activeLayerIndex).toBe(0);
+    });
+
+    it("does not remove the only layer", () => {
+      const state = makeState();
+      const next = editorReducer(state, { type: "REMOVE_LAYER", index: 0 });
+      expect(next).toBe(state);
+    });
+
+    it("adjusts activeLayerIndex when removing below it", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      state = editorReducer(state, { type: "SET_ACTIVE_LAYER", index: 2 });
+      const next = editorReducer(state, { type: "REMOVE_LAYER", index: 0 });
+      expect(next.layers).toHaveLength(2);
+      expect(next.activeLayerIndex).toBe(1);
+    });
+  });
+
+  describe("SET_ACTIVE_LAYER", () => {
+    it("changes active layer", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      const next = editorReducer(state, { type: "SET_ACTIVE_LAYER", index: 0 });
+      expect(next.activeLayerIndex).toBe(0);
+    });
+
+    it("ignores out-of-bounds index", () => {
+      const state = makeState();
+      const next = editorReducer(state, { type: "SET_ACTIVE_LAYER", index: 5 });
+      expect(next).toBe(state);
+    });
+  });
+
+  describe("TOGGLE_LAYER_VISIBILITY", () => {
+    it("toggles visibility and updates composite grid", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 0, key: "R" });
+      expect(state.grid[0][0]).toBe("R");
+      const next = editorReducer(state, { type: "TOGGLE_LAYER_VISIBILITY", index: 0 });
+      expect(next.layers[0].visible).toBe(false);
+      expect(next.grid[0][0]).toBe(".");
+    });
+  });
+
+  describe("RENAME_LAYER", () => {
+    it("renames a layer", () => {
+      const state = makeState();
+      const next = editorReducer(state, { type: "RENAME_LAYER", index: 0, name: "Background" });
+      expect(next.layers[0].name).toBe("Background");
+    });
+  });
+
+  describe("MOVE_LAYER", () => {
+    it("moves a layer up", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      state = editorReducer(state, { type: "SET_ACTIVE_LAYER", index: 0 });
+      const next = editorReducer(state, { type: "MOVE_LAYER", fromIndex: 0, toIndex: 1 });
+      expect(next.layers[1].name).toBe("Layer 1");
+      expect(next.layers[0].name).toBe("Layer 2");
+      expect(next.activeLayerIndex).toBe(1);
+    });
+
+    it("ignores same index", () => {
+      const state = makeState();
+      const next = editorReducer(state, { type: "MOVE_LAYER", fromIndex: 0, toIndex: 0 });
+      expect(next).toBe(state);
+    });
+  });
+
+  describe("MERGE_LAYER_DOWN", () => {
+    it("merges upper layer into lower layer", () => {
+      let state = makeState();
+      // Draw on layer 1
+      state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 0, key: "R" });
+      // Add layer 2 and draw on it
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      state = editorReducer(state, { type: "SET_PIXEL", row: 1, col: 1, key: "G" });
+      expect(state.layers).toHaveLength(2);
+      // Merge layer 2 down into layer 1
+      const next = editorReducer(state, { type: "MERGE_LAYER_DOWN", index: 1 });
+      expect(next.layers).toHaveLength(1);
+      expect(next.layers[0].grid[0][0]).toBe("R");
+      expect(next.layers[0].grid[1][1]).toBe("G");
+    });
+
+    it("cannot merge the bottom layer", () => {
+      const state = makeState();
+      const next = editorReducer(state, { type: "MERGE_LAYER_DOWN", index: 0 });
+      expect(next).toBe(state);
+    });
+
+    it("upper layer pixel overwrites lower layer pixel", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 0, key: "R" });
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 0, key: "G" });
+      const next = editorReducer(state, { type: "MERGE_LAYER_DOWN", index: 1 });
+      expect(next.layers[0].grid[0][0]).toBe("G");
+    });
+  });
+
+  describe("multi-layer drawing", () => {
+    it("draws on active layer only", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 0, key: "R" });
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 0, key: "G" });
+      // Layer 0 still has R, layer 1 has G
+      expect(state.layers[0].grid[0][0]).toBe("R");
+      expect(state.layers[1].grid[0][0]).toBe("G");
+      // Composite shows topmost (G)
+      expect(state.grid[0][0]).toBe("G");
+    });
+
+    it("undo restores correct layer", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 0, key: "R" });
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      state = editorReducer(state, { type: "SET_PIXEL", row: 1, col: 1, key: "G" });
+      // Undo should revert layer 1's pixel
+      state = editorReducer(state, { type: "UNDO" });
+      expect(state.layers[1].grid[1][1]).toBe(".");
+      expect(state.grid[1][1]).toBe(".");
+    });
+  });
+
+  describe("flattenLayers", () => {
+    it("composites visible layers bottom to top", () => {
+      const layers = [
+        { name: "bg", visible: true, grid: [["R", "."], [".", "."]] },
+        { name: "fg", visible: true, grid: [[".", "G"], [".", "."]] },
+      ];
+      const flat = flattenLayers(layers, 2);
+      expect(flat).toEqual([["R", "G"], [".", "."]]);
+    });
+
+    it("skips hidden layers", () => {
+      const layers = [
+        { name: "bg", visible: true, grid: [["R", "."], [".", "."]] },
+        { name: "fg", visible: false, grid: [["G", "G"], ["G", "G"]] },
+      ];
+      const flat = flattenLayers(layers, 2);
+      expect(flat).toEqual([["R", "."], [".", "."]]);
+    });
+
+    it("upper layer overwrites lower layer", () => {
+      const layers = [
+        { name: "bg", visible: true, grid: [["R"]] },
+        { name: "fg", visible: true, grid: [["G"]] },
+      ];
+      const flat = flattenLayers(layers, 1);
+      expect(flat).toEqual([["G"]]);
+    });
+  });
+
+  describe("IMPORT_LAYERED_JSON", () => {
+    it("imports a layered JSON structure", () => {
+      const state = makeState();
+      const next = editorReducer(state, {
+        type: "IMPORT_LAYERED_JSON",
+        data: {
+          palette: { R: "#FF0000", G: "#00FF00" },
+          layers: [
+            { name: "Background", visible: true, rows: ["R.", ".R"] },
+            { name: "Foreground", visible: true, rows: [".G", "G."] },
+          ],
+        },
+      });
+      expect(next.canvasSize).toBe(2);
+      expect(next.layers).toHaveLength(2);
+      expect(next.layers[0].name).toBe("Background");
+      expect(next.layers[0].grid[0]).toEqual(["R", "."]);
+      expect(next.layers[1].name).toBe("Foreground");
+      expect(next.layers[1].grid[0]).toEqual([".", "G"]);
+      expect(next.grid).toEqual([["R", "G"], ["G", "R"]]);
     });
   });
 });

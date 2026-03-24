@@ -1,19 +1,23 @@
-import type { EditorState, PaletteEntry } from "../state/types";
+import type { EditorState, PaletteEntry, Layer } from "../state/types";
 
 const STORAGE_KEY = "jsonpixel-state";
 
 interface PersistedState {
   canvasSize: number;
-  grid: string[][];
+  layers: Layer[];
+  activeLayerIndex: number;
   palette: PaletteEntry[];
   selectedColor: string;
+  /** @deprecated kept for backward compat loading */
+  grid?: string[][];
 }
 
 export function saveState(state: EditorState): void {
   try {
     const data: PersistedState = {
       canvasSize: state.canvasSize,
-      grid: state.grid,
+      layers: state.layers,
+      activeLayerIndex: state.activeLayerIndex,
       palette: state.palette,
       selectedColor: state.selectedColor,
     };
@@ -28,9 +32,17 @@ export function loadState(): Partial<PersistedState> | null {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw) as PersistedState;
+
+    // Migrate from old single-grid format
+    if (!data.layers && data.grid && Array.isArray(data.grid)) {
+      data.layers = [{ name: "Layer 1", visible: true, grid: data.grid }];
+      data.activeLayerIndex = 0;
+      delete data.grid;
+    }
+
     if (
-      !data.grid ||
-      !Array.isArray(data.grid) ||
+      !data.layers ||
+      !Array.isArray(data.layers) ||
       !data.palette ||
       typeof data.canvasSize !== "number"
     ) {
