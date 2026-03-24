@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useCanvasInteraction } from "./useCanvasInteraction";
-import type { EditorState } from "../state/types";
+import type { EditorState, EditorAction } from "../state/types";
+import type { Dispatch } from "react";
 import { createInitialState } from "../state/editorReducer";
 
 function makeState(overrides: Partial<EditorState> = {}): EditorState {
@@ -9,7 +10,7 @@ function makeState(overrides: Partial<EditorState> = {}): EditorState {
 }
 
 function makePointerEvent(
-  type: string,
+  _type: string,
   overrides: Partial<PointerEvent> & { clientX?: number; clientY?: number } = {},
 ): React.PointerEvent {
   return {
@@ -36,7 +37,7 @@ function makeWheelEvent(
 }
 
 describe("useCanvasInteraction", () => {
-  let dispatch: ReturnType<typeof vi.fn>;
+  let dispatch: Mock & Dispatch<EditorAction>;
   let canvasRef: { current: HTMLCanvasElement | null };
 
   beforeEach(() => {

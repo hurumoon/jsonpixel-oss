@@ -3,9 +3,7 @@ import "@testing-library/jest-dom/vitest";
 // Polyfill ResizeObserver for jsdom
 if (typeof globalThis.ResizeObserver === "undefined") {
   globalThis.ResizeObserver = class ResizeObserver {
-    private cb: ResizeObserverCallback;
-    constructor(cb: ResizeObserverCallback) {
-      this.cb = cb;
+    constructor(_cb: ResizeObserverCallback) {
     }
     observe() {}
     unobserve() {}
@@ -41,7 +39,7 @@ if (typeof globalThis.OffscreenCanvas === "undefined") {
 
 // Stub HTMLCanvasElement.getContext for jsdom
 const origGetContext = HTMLCanvasElement.prototype.getContext;
-HTMLCanvasElement.prototype.getContext = function (contextId: string, ...args: unknown[]) {
+HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, contextId: string, ...args: unknown[]) {
   if (contextId === "2d") {
     const noop = () => {};
     return {
