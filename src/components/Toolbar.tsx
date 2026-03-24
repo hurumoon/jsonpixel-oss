@@ -63,6 +63,17 @@ export default function Toolbar() {
         >
           Redo
         </button>
+        <button
+          className="tool-btn"
+          onClick={() => {
+            if (window.confirm("キャンバスをクリアしますか？")) {
+              dispatch({ type: "CLEAR_CANVAS" });
+            }
+          }}
+          title="Clear Canvas"
+        >
+          Clear
+        </button>
       </div>
       <div className="toolbar-group">
         <span className="zoom-label" aria-live="polite">

@@ -46,5 +46,6 @@ export type EditorAction =
   | { type: "SET_ZOOM"; zoom: number }
   | { type: "SET_PAN"; x: number; y: number }
   | { type: "SET_VIEW"; zoom: number; x: number; y: number }
+  | { type: "CLEAR_CANVAS" }
   | { type: "UNDO" }
   | { type: "REDO" };
