@@ -1,0 +1,24 @@
+{
+  "palette": {
+    "D": "#8B0000",
+    "R": "#DC143C",
+    "L": "#FF4466",
+    "H": "#FF8FA3",
+    "W": "#FFD6E0"
+  },
+  "rows": [
+    "..DDD...DDD..",
+    ".DWHLD.DLRRD.",
+    "DWHHLLLLLLRRD",
+    "DWHHLLLLLRRRD",
+    "DHHLLLLLLRRRD",
+    "DHLLLLLLRRRRD",
+    ".DRLLLLLRRRD.",
+    "..DRLLLRRRD..",
+    "...DRLLRRD...",
+    "....DRRRD....",
+    ".....DRD.....",
+    "......D......",
+    "............."
+  ]
+}

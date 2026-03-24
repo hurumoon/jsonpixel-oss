@@ -1,5 +1,6 @@
 import { useEditor } from "../state/editorContext";
 import type { Tool } from "../state/types";
+import AboutDialog from "./AboutDialog";
 
 const tools: { tool: Tool; label: string; shortcut: string }[] = [
   { tool: "pen", label: "Pen", shortcut: "B" },
@@ -35,6 +36,15 @@ export default function Toolbar() {
         >
           Grid
         </button>
+        <button
+          className={`tool-btn ${state.boldGrid ? "active" : ""}`}
+          onClick={() => dispatch({ type: "TOGGLE_BOLD_GRID" })}
+          title="Bold Grid"
+          aria-pressed={state.boldGrid}
+          disabled={!state.showGrid}
+        >
+          Bold
+        </button>
       </div>
       <div className="toolbar-group" role="group" aria-label="History">
         <button
@@ -58,6 +68,10 @@ export default function Toolbar() {
         <span className="zoom-label" aria-live="polite">
           Zoom: {Math.round(state.zoom)}px
         </span>
+      </div>
+      <div className="toolbar-spacer" />
+      <div className="toolbar-group">
+        <AboutDialog />
       </div>
     </nav>
   );

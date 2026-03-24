@@ -33,6 +33,7 @@ export function useCanvasRenderer(
   zoom: number,
   panOffset: { x: number; y: number },
   showGrid: boolean,
+  boldGrid: boolean,
   palette: PaletteEntry[],
 ) {
   const offscreenRef = useRef<OffscreenCanvas | null>(null);
@@ -77,7 +78,7 @@ export function useCanvasRenderer(
 
         for (let r = startRow; r < endRow; r++) {
           for (let c = startCol; c < endCol; c++) {
-            const key = grid[r][c];
+            const key = grid[r]?.[c] ?? ".";
             const localR = r - startRow;
             const localC = c - startCol;
 
@@ -127,7 +128,7 @@ export function useCanvasRenderer(
           for (let c = startCol; c < endCol; c++) {
             const x = panOffset.x + c * zoom;
             const y = panOffset.y + r * zoom;
-            const key = grid[r][c];
+            const key = grid[r]?.[c] ?? ".";
 
             if (key === ".") {
               const cSize = Math.max(1, Math.floor(zoom / 2));
@@ -156,8 +157,8 @@ export function useCanvasRenderer(
 
       // Grid lines
       if (showGrid && zoom >= 4) {
-        ctx.strokeStyle = GRID_COLOR;
-        ctx.lineWidth = 0.5;
+        ctx.strokeStyle = boldGrid ? "#555555" : GRID_COLOR;
+        ctx.lineWidth = boldGrid ? 1 : 0.5;
         ctx.beginPath();
         for (let c = startCol; c <= endCol; c++) {
           const x = panOffset.x + c * zoom;
@@ -177,7 +178,7 @@ export function useCanvasRenderer(
       ctx.lineWidth = 1;
       ctx.strokeRect(panOffset.x, panOffset.y, canvasSize * zoom, canvasSize * zoom);
     },
-    [grid, canvasSize, zoom, panOffset, showGrid, palette],
+    [grid, canvasSize, zoom, panOffset, showGrid, boldGrid, palette],
   );
 
   return render;

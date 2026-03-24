@@ -14,8 +14,15 @@ export function useCanvasInteraction(
   const lastMouse = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const strokePixels = useRef<Map<string, { row: number; col: number; key: string }>>(new Map());
 
-  const getMousePos = useCallback(
-    (e: React.MouseEvent) => {
+  // Multi-touch state for pinch zoom / two-finger pan
+  const activeTouches = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchStartDist = useRef(0);
+  const pinchStartZoom = useRef(0);
+  const pinchStartCenter = useRef({ x: 0, y: 0 });
+  const pinchStartPan = useRef({ x: 0, y: 0 });
+
+  const getPointerPos = useCallback(
+    (e: React.PointerEvent | PointerEvent) => {
       const canvas = canvasRef.current;
       if (!canvas) return { x: 0, y: 0 };
       const rect = canvas.getBoundingClientRect();
@@ -41,12 +48,42 @@ export function useCanvasInteraction(
     [state.canvasSize, getDrawKey],
   );
 
-  const onMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      const pos = getMousePos(e);
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      const canvas = canvasRef.current;
+      if (canvas && e.pointerType === "touch") {
+        canvas.setPointerCapture(e.pointerId);
+      }
 
-      // Middle button or space+left for pan
-      if (e.button === 1) {
+      const pos = getPointerPos(e);
+
+      // Track touch for multi-touch gestures
+      if (e.pointerType === "touch") {
+        activeTouches.current.set(e.pointerId, pos);
+        // If two fingers down, start pinch/pan gesture
+        if (activeTouches.current.size === 2) {
+          // Cancel any drawing in progress
+          isDrawing.current = false;
+          strokePixels.current.clear();
+          isPanning.current = true;
+
+          const touches = Array.from(activeTouches.current.values());
+          const dx = touches[1].x - touches[0].x;
+          const dy = touches[1].y - touches[0].y;
+          pinchStartDist.current = Math.sqrt(dx * dx + dy * dy);
+          pinchStartZoom.current = state.zoom;
+          pinchStartCenter.current = {
+            x: (touches[0].x + touches[1].x) / 2,
+            y: (touches[0].y + touches[1].y) / 2,
+          };
+          pinchStartPan.current = { ...state.panOffset };
+          return;
+        }
+        // Single touch — don't start drawing immediately, wait to confirm it's not a two-finger gesture
+      }
+
+      // Middle button or right button for pan (mouse)
+      if (e.button === 1 || e.button === 2) {
         isPanning.current = true;
         lastMouse.current = pos;
         e.preventDefault();
@@ -54,6 +91,9 @@ export function useCanvasInteraction(
       }
 
       if (e.button !== 0) return;
+
+      // For touch, ignore if multi-touch is active
+      if (e.pointerType === "touch" && activeTouches.current.size > 1) return;
 
       const cell = screenToGrid(pos.x, pos.y, state.panOffset, state.zoom);
 
@@ -95,7 +135,8 @@ export function useCanvasInteraction(
       drawAt(cell.row, cell.col);
     },
     [
-      getMousePos,
+      getPointerPos,
+      canvasRef,
       state.panOffset,
       state.zoom,
       state.activeTool,
@@ -107,11 +148,50 @@ export function useCanvasInteraction(
     ],
   );
 
-  const onMouseMove = useCallback(
-    (e: React.MouseEvent) => {
-      const pos = getMousePos(e);
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      const pos = getPointerPos(e);
 
-      if (isPanning.current) {
+      // Update tracked touch position
+      if (e.pointerType === "touch" && activeTouches.current.has(e.pointerId)) {
+        activeTouches.current.set(e.pointerId, pos);
+
+        // Two-finger pinch/pan
+        if (activeTouches.current.size === 2) {
+          const touches = Array.from(activeTouches.current.values());
+          const dx = touches[1].x - touches[0].x;
+          const dy = touches[1].y - touches[0].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const currentCenter = {
+            x: (touches[0].x + touches[1].x) / 2,
+            y: (touches[0].y + touches[1].y) / 2,
+          };
+
+          // Calculate new zoom
+          const scale = dist / pinchStartDist.current;
+          const newZoom = Math.max(1, Math.min(100, pinchStartZoom.current * scale));
+
+          // Calculate new pan (zoom toward pinch center + pan offset)
+          const zoomScale = newZoom / pinchStartZoom.current;
+          const newPanX =
+            currentCenter.x -
+            (pinchStartCenter.current.x - pinchStartPan.current.x) * zoomScale;
+          const newPanY =
+            currentCenter.y -
+            (pinchStartCenter.current.y - pinchStartPan.current.y) * zoomScale;
+
+          dispatch({
+            type: "SET_VIEW",
+            zoom: Math.round(newZoom * 100) / 100,
+            x: newPanX,
+            y: newPanY,
+          });
+          return;
+        }
+      }
+
+      // Mouse middle-button / right-button pan
+      if (isPanning.current && e.pointerType !== "touch") {
         const dx = pos.x - lastMouse.current.x;
         const dy = pos.y - lastMouse.current.y;
         dispatch({ type: "SET_PAN", x: state.panOffset.x + dx, y: state.panOffset.y + dy });
@@ -138,29 +218,43 @@ export function useCanvasInteraction(
       }
       lastCell.current = cell;
     },
-    [getMousePos, state.panOffset, state.zoom, dispatch, drawAt],
+    [getPointerPos, state.panOffset, state.zoom, dispatch, drawAt],
   );
 
-  const onMouseUp = useCallback(() => {
-    if (isPanning.current) {
-      isPanning.current = false;
-      return;
-    }
-    if (isDrawing.current) {
-      isDrawing.current = false;
-      const pixels = Array.from(strokePixels.current.values());
-      if (pixels.length > 0) {
-        dispatch({ type: "SET_PIXELS", pixels });
+  const onPointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      // Remove tracked touch
+      if (e.pointerType === "touch") {
+        activeTouches.current.delete(e.pointerId);
+        if (activeTouches.current.size < 2) {
+          isPanning.current = false;
+        }
       }
-      strokePixels.current.clear();
-      lastCell.current = null;
-    }
-  }, [dispatch]);
+
+      if (isPanning.current && e.pointerType !== "touch") {
+        isPanning.current = false;
+        return;
+      }
+      if (isDrawing.current) {
+        isDrawing.current = false;
+        const pixels = Array.from(strokePixels.current.values());
+        strokePixels.current.clear();
+        if (pixels.length > 0) {
+          dispatch({ type: "SET_PIXELS", pixels });
+        }
+        lastCell.current = null;
+      }
+    },
+    [dispatch],
+  );
 
   const onWheel = useCallback(
     (e: React.WheelEvent) => {
       e.preventDefault();
-      const pos = getMousePos(e);
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const pos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       const oldZoom = state.zoom;
       const delta = e.deltaY > 0 ? -1 : 1;
       const factor = 1.1;
@@ -171,11 +265,10 @@ export function useCanvasInteraction(
       const newPanX = pos.x - (pos.x - state.panOffset.x) * scale;
       const newPanY = pos.y - (pos.y - state.panOffset.y) * scale;
 
-      dispatch({ type: "SET_ZOOM", zoom: Math.round(newZoom * 100) / 100 });
-      dispatch({ type: "SET_PAN", x: newPanX, y: newPanY });
+      dispatch({ type: "SET_VIEW", zoom: Math.round(newZoom * 100) / 100, x: newPanX, y: newPanY });
     },
-    [getMousePos, state.zoom, state.panOffset, dispatch],
+    [canvasRef, state.zoom, state.panOffset, dispatch],
   );
 
-  return { onMouseDown, onMouseMove, onMouseUp, onWheel, strokePixels };
+  return { onPointerDown, onPointerMove, onPointerUp, onWheel, strokePixels };
 }

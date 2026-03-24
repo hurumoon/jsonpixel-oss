@@ -1,9 +1,16 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useEditor } from "../state/editorContext";
 
 export default function SizeControl() {
   const { state, dispatch } = useEditor();
   const [inputSize, setInputSize] = useState(String(state.canvasSize));
+  const prevCanvasSize = useRef(state.canvasSize);
+
+  // Sync input when canvasSize changes externally (e.g. import)
+  if (state.canvasSize !== prevCanvasSize.current) {
+    prevCanvasSize.current = state.canvasSize;
+    setInputSize(String(state.canvasSize));
+  }
 
   const handleApply = () => {
     const size = parseInt(inputSize, 10);

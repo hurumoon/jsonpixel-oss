@@ -24,6 +24,7 @@ export interface EditorState {
   selectedColor: string;
   activeTool: Tool;
   showGrid: boolean;
+  boldGrid: boolean;
   zoom: number;
   panOffset: { x: number; y: number };
   undoStack: PixelDiff[][];
@@ -41,7 +42,9 @@ export type EditorAction =
   | { type: "SET_CANVAS_SIZE"; size: number }
   | { type: "IMPORT_JSON"; data: DotArtJson }
   | { type: "TOGGLE_GRID" }
+  | { type: "TOGGLE_BOLD_GRID" }
   | { type: "SET_ZOOM"; zoom: number }
   | { type: "SET_PAN"; x: number; y: number }
+  | { type: "SET_VIEW"; zoom: number; x: number; y: number }
   | { type: "UNDO" }
   | { type: "REDO" };

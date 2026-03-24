@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { EditorProvider, useEditor } from "./state/editorContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Toolbar from "./components/Toolbar";
@@ -48,17 +48,30 @@ function KeyboardHandler() {
 }
 
 function AppContent() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="app">
       <KeyboardHandler />
       <Toolbar />
       <div className="main-area">
-        <div className="sidebar">
+        <div
+          className={`sidebar-overlay ${sidebarOpen ? "open" : ""}`}
+          onClick={() => setSidebarOpen(false)}
+        />
+        <div className={`sidebar ${sidebarOpen ? "open" : ""}`}>
           <PalettePanel />
           <SizeControl />
           <ImportExportPanel />
         </div>
         <PixelCanvas />
+        <button
+          className="sidebar-toggle"
+          onClick={() => setSidebarOpen((v) => !v)}
+          aria-label="Toggle sidebar"
+        >
+          {sidebarOpen ? "\u2715" : "\u2630"}
+        </button>
       </div>
     </div>
   );

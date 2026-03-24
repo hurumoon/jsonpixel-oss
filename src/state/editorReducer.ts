@@ -21,6 +21,7 @@ export function createInitialState(size = 16): EditorState {
     selectedColor: "K",
     activeTool: "pen",
     showGrid: true,
+    boldGrid: false,
     zoom: 20,
     panOffset: { x: 0, y: 0 },
     undoStack: [],
@@ -129,12 +130,20 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
 
     case "IMPORT_JSON": {
       const { data } = action;
-      const size = data.rows.length;
+      const rows = data.rows.length;
+      const cols = Math.max(...data.rows.map((row) => row.length));
+      const size = Math.max(rows, cols);
       const palette: PaletteEntry[] = Object.entries(data.palette).map(([key, color]) => ({
         key,
         color,
       }));
-      const grid = data.rows.map((row) => row.split(""));
+      const grid = createEmptyGrid(size);
+      for (let r = 0; r < rows; r++) {
+        const chars = data.rows[r].split("");
+        for (let c = 0; c < chars.length; c++) {
+          grid[r][c] = chars[c];
+        }
+      }
       return {
         ...state,
         canvasSize: size,
@@ -149,6 +158,9 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case "TOGGLE_GRID":
       return { ...state, showGrid: !state.showGrid };
 
+    case "TOGGLE_BOLD_GRID":
+      return { ...state, boldGrid: !state.boldGrid };
+
     case "SET_ZOOM":
       return { ...state, zoom: Math.max(1, Math.min(100, action.zoom)) };
 
@@ -157,6 +169,14 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       const clampedX = Math.max(-totalPx, Math.min(totalPx, action.x));
       const clampedY = Math.max(-totalPx, Math.min(totalPx, action.y));
       return { ...state, panOffset: { x: clampedX, y: clampedY } };
+    }
+
+    case "SET_VIEW": {
+      const newZoom = Math.max(1, Math.min(100, action.zoom));
+      const total = state.canvasSize * newZoom;
+      const cx = Math.max(-total, Math.min(total, action.x));
+      const cy = Math.max(-total, Math.min(total, action.y));
+      return { ...state, zoom: newZoom, panOffset: { x: cx, y: cy } };
     }
 
     case "UNDO": {
