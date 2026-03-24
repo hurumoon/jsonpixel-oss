@@ -1,0 +1,273 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #1e1e2e;
+  --surface: #2a2a3e;
+  --surface2: #363650;
+  --border: #44446a;
+  --text: #e0e0f0;
+  --text-dim: #9090b0;
+  --accent: #7c7cf0;
+  --accent-hover: #9090ff;
+  --danger: #f05050;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.toolbar-group {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.tool-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.tool-btn:hover {
+  background: var(--border);
+}
+
+.tool-btn.active {
+  background: var(--accent);
+  border-color: var(--accent-hover);
+  color: #fff;
+}
+
+.tool-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.zoom-label {
+  color: var(--text-dim);
+  font-size: 12px;
+  min-width: 80px;
+}
+
+/* Main area */
+.main-area {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  padding: 8px 10px 4px;
+  border-top: 1px solid var(--border);
+}
+
+.sidebar > :first-child h3 {
+  border-top: none;
+}
+
+/* Palette */
+.palette-panel {
+  padding-bottom: 8px;
+}
+
+.palette-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 6px;
+}
+
+.palette-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.palette-entry:hover {
+  background: var(--surface2);
+}
+
+.palette-entry.selected {
+  border-color: var(--accent);
+  background: var(--surface2);
+}
+
+.palette-color-input {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0;
+  cursor: pointer;
+  background: none;
+}
+
+.palette-color-input::-webkit-color-swatch-wrapper {
+  padding: 1px;
+}
+
+.palette-color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+.palette-key {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: bold;
+  min-width: 16px;
+}
+
+.palette-remove {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.palette-remove:hover {
+  color: var(--danger);
+  background: rgba(240, 80, 80, 0.15);
+}
+
+.palette-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+}
+
+.palette-full {
+  color: var(--text-dim);
+  font-size: 11px;
+  padding: 4px 10px;
+}
+
+/* Size control */
+.size-control {
+  padding: 0 10px 8px;
+}
+
+.size-input-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.size-input {
+  width: 60px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.size-label {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+/* Import/Export */
+.import-export-panel {
+  padding: 0 10px 10px;
+}
+
+.ie-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.file-btn {
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.json-textarea {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: monospace;
+  font-size: 11px;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.feedback-msg {
+  color: #50c878;
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.error-msg {
+  color: var(--danger);
+  font-size: 11px;
+  margin-top: 4px;
+  white-space: pre-wrap;
+}
