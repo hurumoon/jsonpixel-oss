@@ -181,6 +181,33 @@ describe("editorReducer", () => {
     });
   });
 
+  describe("CLEAR_CANVAS", () => {
+    it("clears all pixels to empty and creates undo entry", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 0, key: "R" });
+      state = editorReducer(state, { type: "SET_PIXEL", row: 1, col: 1, key: "G" });
+      const next = editorReducer(state, { type: "CLEAR_CANVAS" });
+      expect(next.grid.every((row) => row.every((c) => c === "."))).toBe(true);
+      expect(next.undoStack.length).toBe(state.undoStack.length + 1);
+      expect(next.redoStack).toHaveLength(0);
+    });
+
+    it("is a no-op on an already empty canvas", () => {
+      const state = makeState();
+      const next = editorReducer(state, { type: "CLEAR_CANVAS" });
+      expect(next).toBe(state);
+    });
+
+    it("can be undone to restore previous state", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 0, key: "R" });
+      state = editorReducer(state, { type: "CLEAR_CANVAS" });
+      expect(state.grid[0][0]).toBe(".");
+      state = editorReducer(state, { type: "UNDO" });
+      expect(state.grid[0][0]).toBe("R");
+    });
+  });
+
   describe("createEmptyGrid", () => {
     it("creates a grid of dots", () => {
       const grid = createEmptyGrid(3);

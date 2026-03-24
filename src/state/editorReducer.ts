@@ -179,6 +179,24 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       return { ...state, zoom: newZoom, panOffset: { x: cx, y: cy } };
     }
 
+    case "CLEAR_CANVAS": {
+      const diffs: PixelDiff[] = [];
+      for (let r = 0; r < state.canvasSize; r++) {
+        for (let c = 0; c < state.canvasSize; c++) {
+          if (state.grid[r][c] !== ".") {
+            diffs.push({ row: r, col: c, prev: state.grid[r][c], next: "." });
+          }
+        }
+      }
+      if (diffs.length === 0) return state;
+      return {
+        ...state,
+        grid: createEmptyGrid(state.canvasSize),
+        undoStack: [...state.undoStack.slice(-(MAX_UNDO - 1)), diffs],
+        redoStack: [],
+      };
+    }
+
     case "UNDO": {
       if (state.undoStack.length === 0) return state;
       const diffs = state.undoStack[state.undoStack.length - 1];
