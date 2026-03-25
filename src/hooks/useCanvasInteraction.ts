@@ -144,6 +144,8 @@ export function useCanvasInteraction(
       state.selectedColor,
       state.grid,
       state.canvasSize,
+      state.layers,
+      state.activeLayerIndex,
       dispatch,
       drawAt,
     ],

@@ -1,21 +1,22 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useEditor } from "../state/editorContext";
+import { MIN_CANVAS_SIZE, MAX_CANVAS_SIZE } from "../constants";
 
 export default function SizeControl() {
   const { state, dispatch } = useEditor();
   const [inputSize, setInputSize] = useState(String(state.canvasSize));
-  const prevCanvasSize = useRef(state.canvasSize);
+  const [prevCanvasSize, setPrevCanvasSize] = useState(state.canvasSize);
 
   // Sync input when canvasSize changes externally (e.g. import)
-  if (state.canvasSize !== prevCanvasSize.current) {
-    prevCanvasSize.current = state.canvasSize;
+  if (state.canvasSize !== prevCanvasSize) {
+    setPrevCanvasSize(state.canvasSize);
     setInputSize(String(state.canvasSize));
   }
 
   const handleApply = () => {
     const size = parseInt(inputSize, 10);
     if (isNaN(size)) return;
-    const clamped = Math.max(10, Math.min(1000, size));
+    const clamped = Math.max(MIN_CANVAS_SIZE, Math.min(MAX_CANVAS_SIZE, size));
     if (clamped !== state.canvasSize) {
       if (clamped < state.canvasSize) {
         if (
@@ -37,8 +38,8 @@ export default function SizeControl() {
       <div className="size-input-row">
         <input
           type="number"
-          min={10}
-          max={1000}
+          min={MIN_CANVAS_SIZE}
+          max={MAX_CANVAS_SIZE}
           value={inputSize}
           onChange={(e) => setInputSize(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleApply()}

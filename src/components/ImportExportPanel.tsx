@@ -8,6 +8,7 @@ import {
 } from "../utils/jsonSerializer";
 import { gridToPngBlob } from "../utils/exportPng";
 import type { DotArtJson, LayeredDotArtJson } from "../state/types";
+import { PNG_EXPORT_TARGET_SIZE } from "../constants";
 
 export default function ImportExportPanel() {
   const { state, dispatch } = useEditor();
@@ -81,24 +82,31 @@ export default function ImportExportPanel() {
       setJsonText(text);
       handleImport(text);
     };
+    reader.onerror = () => {
+      setError("ファイルの読み込みに失敗しました");
+    };
     reader.readAsText(file);
     e.target.value = "";
   };
 
   const handleCopy = async () => {
-    const json =
-      state.layers.length > 1
-        ? layersToJson(state.layers, state.palette)
-        : gridToJson(state.grid, state.palette);
-    const text = JSON.stringify(json, null, 2);
-    await navigator.clipboard.writeText(text);
-    showFeedback("Copied!");
+    try {
+      const json =
+        state.layers.length > 1
+          ? layersToJson(state.layers, state.palette)
+          : gridToJson(state.grid, state.palette);
+      const text = JSON.stringify(json, null, 2);
+      await navigator.clipboard.writeText(text);
+      showFeedback("Copied!");
+    } catch {
+      setError("クリップボードへのコピーに失敗しました");
+    }
   };
 
   const handlePngDownload = async () => {
     showFeedback("Exporting PNG...");
     try {
-      const scale = Math.max(1, Math.floor(512 / state.canvasSize));
+      const scale = Math.max(1, Math.floor(PNG_EXPORT_TARGET_SIZE / state.canvasSize));
       const blob = await gridToPngBlob(state.grid, state.palette, scale);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

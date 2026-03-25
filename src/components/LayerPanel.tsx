@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useEditor } from "../state/editorContext";
+import { MAX_LAYER_NAME_LENGTH } from "../constants";
 
 export default function LayerPanel() {
   const { state, dispatch } = useEditor();
@@ -13,7 +14,8 @@ export default function LayerPanel() {
 
   const commitRename = () => {
     if (editingIndex !== null && editName.trim()) {
-      dispatch({ type: "RENAME_LAYER", index: editingIndex, name: editName.trim() });
+      const trimmed = editName.trim().slice(0, MAX_LAYER_NAME_LENGTH);
+      dispatch({ type: "RENAME_LAYER", index: editingIndex, name: trimmed });
     }
     setEditingIndex(null);
   };
@@ -56,6 +58,7 @@ export default function LayerPanel() {
                   className="layer-name-input"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
+                  maxLength={MAX_LAYER_NAME_LENGTH}
                   onBlur={commitRename}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") commitRename();
