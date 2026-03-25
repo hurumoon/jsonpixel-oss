@@ -9,6 +9,7 @@ import {
 import { gridToPngBlob } from "../utils/exportPng";
 import type { DotArtJson, LayeredDotArtJson } from "../state/types";
 import { PNG_EXPORT_TARGET_SIZE } from "../constants";
+import { STRINGS } from "../strings";
 
 export default function ImportExportPanel() {
   const { state, dispatch } = useEditor();
@@ -52,7 +53,7 @@ export default function ImportExportPanel() {
       setError("");
       showFeedback("Imported");
     } catch {
-      setError("JSONのパースに失敗しました");
+      setError(STRINGS.ERR_JSON_PARSE_FAILED);
       setFeedback("");
     }
   };
@@ -83,7 +84,7 @@ export default function ImportExportPanel() {
       handleImport(text);
     };
     reader.onerror = () => {
-      setError("ファイルの読み込みに失敗しました");
+      setError(STRINGS.ERR_FILE_READ_FAILED);
     };
     reader.readAsText(file);
     e.target.value = "";
@@ -99,7 +100,7 @@ export default function ImportExportPanel() {
       await navigator.clipboard.writeText(text);
       showFeedback("Copied!");
     } catch {
-      setError("クリップボードへのコピーに失敗しました");
+      setError(STRINGS.ERR_CLIPBOARD_COPY_FAILED);
     }
   };
 

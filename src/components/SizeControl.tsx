@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useEditor } from "../state/editorContext";
 import { MIN_CANVAS_SIZE, MAX_CANVAS_SIZE } from "../constants";
+import { STRINGS } from "../strings";
 
 export default function SizeControl() {
   const { state, dispatch } = useEditor();
@@ -21,7 +22,7 @@ export default function SizeControl() {
       if (clamped < state.canvasSize) {
         if (
           !confirm(
-            `サイズを${state.canvasSize}から${clamped}に縮小します。はみ出た部分は失われます。`,
+            STRINGS.CONFIRM_RESIZE(state.canvasSize, clamped),
           )
         ) {
           return;

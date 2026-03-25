@@ -1,4 +1,5 @@
 import type { PaletteEntry } from "../state/types";
+import { STRINGS } from "../strings";
 
 export function gridToPngBlob(grid: string[][], palette: PaletteEntry[], scale = 1): Promise<Blob> {
   const size = grid.length;
@@ -7,7 +8,7 @@ export function gridToPngBlob(grid: string[][], palette: PaletteEntry[], scale =
   canvas.width = px;
   canvas.height = px;
   const ctx = canvas.getContext("2d");
-  if (!ctx) return Promise.reject(new Error("Canvas 2D context を取得できませんでした"));
+  if (!ctx) return Promise.reject(new Error(STRINGS.ERR_CANVAS_CONTEXT));
 
   const colorMap = new Map<string, string>();
   for (const p of palette) colorMap.set(p.key, p.color);
@@ -24,7 +25,7 @@ export function gridToPngBlob(grid: string[][], palette: PaletteEntry[], scale =
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
-      else reject(new Error("PNG生成に失敗しました"));
+      else reject(new Error(STRINGS.ERR_PNG_GENERATION));
     }, "image/png");
   });
 }

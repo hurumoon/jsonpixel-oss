@@ -78,7 +78,7 @@ describe("validateDotArtJson", () => {
       rows: ["RR", "RR", "RR"],
     });
     expect(result.valid).toBe(false);
-    expect(result.errors.some((e) => e.includes("正方形"))).toBe(true);
+    expect(result.errors.some((e) => e.includes("square"))).toBe(true);
   });
 
   it("rejects dot in palette", () => {
@@ -103,7 +103,7 @@ describe("validateDotArtJson", () => {
       rows: ["RX"],
     });
     expect(result.valid).toBe(false);
-    expect(result.errors.some((e) => e.includes("未定義"))).toBe(true);
+    expect(result.errors.some((e) => e.includes("Undefined key"))).toBe(true);
   });
 
   it("rejects inconsistent row lengths", () => {

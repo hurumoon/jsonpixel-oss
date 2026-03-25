@@ -113,7 +113,7 @@ describe("ImportExportPanel", () => {
     const textarea = screen.getByPlaceholderText("JSON...") as HTMLTextAreaElement;
     fireEvent.change(textarea, { target: { value: "not json" } });
     fireEvent.click(screen.getByText("Import"));
-    expect(screen.getByText("JSONのパースに失敗しました")).toBeInTheDocument();
+    expect(screen.getByText("Failed to parse JSON")).toBeInTheDocument();
   });
 
   it("import with valid JSON does not show error", () => {
@@ -125,6 +125,6 @@ describe("ImportExportPanel", () => {
     });
     fireEvent.change(textarea, { target: { value: json } });
     fireEvent.click(screen.getByText("Import"));
-    expect(screen.queryByText("JSONのパースに失敗しました")).not.toBeInTheDocument();
+    expect(screen.queryByText("Failed to parse JSON")).not.toBeInTheDocument();
   });
 });
