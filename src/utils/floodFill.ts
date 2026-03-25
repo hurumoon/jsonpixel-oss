@@ -1,15 +1,21 @@
 import { MAX_FILL_CELLS } from "../constants";
 
+export interface FloodFillResult {
+  cells: { row: number; col: number }[];
+  limitReached: boolean;
+}
+
 export function floodFill(
   grid: string[][],
   startRow: number,
   startCol: number,
   fillKey: string,
-): { row: number; col: number }[] {
+): FloodFillResult {
   const size = grid.length;
-  if (startRow < 0 || startRow >= size || startCol < 0 || startCol >= size) return [];
+  if (startRow < 0 || startRow >= size || startCol < 0 || startCol >= size)
+    return { cells: [], limitReached: false };
   const targetKey = grid[startRow][startCol];
-  if (targetKey === fillKey) return [];
+  if (targetKey === fillKey) return { cells: [], limitReached: false };
 
   const result: { row: number; col: number }[] = [];
   // Use Uint8Array for visited tracking — much more memory-efficient than Set for large grids
@@ -24,7 +30,9 @@ export function floodFill(
     const c = id % size;
     result.push({ row: r, col: c });
 
-    if (result.length >= MAX_FILL_CELLS) break;
+    if (result.length >= MAX_FILL_CELLS) {
+      return { cells: result, limitReached: true };
+    }
 
     if (r > 0) {
       const nid = id - size;
@@ -55,5 +63,5 @@ export function floodFill(
       }
     }
   }
-  return result;
+  return { cells: result, limitReached: false };
 }

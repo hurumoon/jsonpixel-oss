@@ -8,9 +8,10 @@ describe("floodFill", () => {
       [".", ".", "R"],
       ["R", "R", "R"],
     ];
-    const cells = floodFill(grid, 0, 0, "G");
-    expect(cells).toHaveLength(4);
-    const coords = new Set(cells.map((c) => `${c.row},${c.col}`));
+    const result = floodFill(grid, 0, 0, "G");
+    expect(result.cells).toHaveLength(4);
+    expect(result.limitReached).toBe(false);
+    const coords = new Set(result.cells.map((c) => `${c.row},${c.col}`));
     expect(coords).toContain("0,0");
     expect(coords).toContain("0,1");
     expect(coords).toContain("1,0");
@@ -23,9 +24,10 @@ describe("floodFill", () => {
       ["R", "R", "R"],
       [".", "R", "."],
     ];
-    const cells = floodFill(grid, 0, 0, "G");
-    expect(cells).toHaveLength(1);
-    expect(cells[0]).toEqual({ row: 0, col: 0 });
+    const result = floodFill(grid, 0, 0, "G");
+    expect(result.cells).toHaveLength(1);
+    expect(result.cells[0]).toEqual({ row: 0, col: 0 });
+    expect(result.limitReached).toBe(false);
   });
 
   it("returns empty when fillKey matches target", () => {
@@ -33,14 +35,15 @@ describe("floodFill", () => {
       ["R", "R"],
       ["R", "R"],
     ];
-    const cells = floodFill(grid, 0, 0, "R");
-    expect(cells).toHaveLength(0);
+    const result = floodFill(grid, 0, 0, "R");
+    expect(result.cells).toHaveLength(0);
+    expect(result.limitReached).toBe(false);
   });
 
   it("returns empty for out-of-bounds", () => {
     const grid = [["R"]];
-    expect(floodFill(grid, -1, 0, "G")).toHaveLength(0);
-    expect(floodFill(grid, 0, 5, "G")).toHaveLength(0);
+    expect(floodFill(grid, -1, 0, "G").cells).toHaveLength(0);
+    expect(floodFill(grid, 0, 5, "G").cells).toHaveLength(0);
   });
 
   it("fills entire grid when all same color", () => {
@@ -49,7 +52,8 @@ describe("floodFill", () => {
       [".", ".", "."],
       [".", ".", "."],
     ];
-    const cells = floodFill(grid, 1, 1, "R");
-    expect(cells).toHaveLength(9);
+    const result = floodFill(grid, 1, 1, "R");
+    expect(result.cells).toHaveLength(9);
+    expect(result.limitReached).toBe(false);
   });
 });

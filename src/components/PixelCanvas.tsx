@@ -1,8 +1,8 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { useEditor } from "../state/editorContext";
 import { useCanvasRenderer } from "../hooks/useCanvasRenderer";
 import { useCanvasInteraction } from "../hooks/useCanvasInteraction";
-import { MIN_ZOOM, MAX_ZOOM } from "../constants";
+import { MIN_ZOOM, MAX_ZOOM, MAX_FILL_CELLS } from "../constants";
 import type { PaletteEntry } from "../state/types";
 
 const CURSOR_MAP = {
@@ -22,6 +22,17 @@ export default function PixelCanvas() {
   const { state, dispatch } = useEditor();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [fillWarning, setFillWarning] = useState("");
+  const fillWarningTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const handleFillLimitReached = useCallback(() => {
+    setFillWarning(
+      `塗りつぶしが上限（${MAX_FILL_CELLS.toLocaleString()}セル）に達したため、一部のみ塗りつぶされました`,
+    );
+    clearTimeout(fillWarningTimer.current);
+    fillWarningTimer.current = setTimeout(() => setFillWarning(""), 4000);
+  }, []);
+
   const render = useCanvasRenderer(
     state.grid,
     state.canvasSize,
@@ -32,7 +43,7 @@ export default function PixelCanvas() {
     state.palette,
   );
   const { onPointerDown, onPointerMove, onPointerUp, onWheel, strokePixels } =
-    useCanvasInteraction(state, dispatch, canvasRef);
+    useCanvasInteraction(state, dispatch, canvasRef, handleFillLimitReached);
 
   const rafRef = useRef<number>(0);
   const bufferRef = useRef<OffscreenCanvas | null>(null);
@@ -201,6 +212,11 @@ export default function PixelCanvas() {
       >
         Fit
       </button>
+      {fillWarning && (
+        <div className="fill-warning-toast" role="alert">
+          {fillWarning}
+        </div>
+      )}
     </div>
   );
 }
