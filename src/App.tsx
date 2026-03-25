@@ -3,6 +3,7 @@ import { EditorProvider, useEditor } from "./state/editorContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Toolbar from "./components/Toolbar";
 import PalettePanel from "./components/PalettePanel";
+import LayerPanel from "./components/LayerPanel";
 import SizeControl from "./components/SizeControl";
 import ImportExportPanel from "./components/ImportExportPanel";
 import PixelCanvas from "./components/PixelCanvas";
@@ -60,6 +61,7 @@ function AppContent() {
           onClick={() => setSidebarOpen(false)}
         />
         <div className={`sidebar ${sidebarOpen ? "open" : ""}`}>
+          <LayerPanel />
           <PalettePanel />
           <SizeControl />
           <ImportExportPanel />

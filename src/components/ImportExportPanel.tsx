@@ -1,8 +1,13 @@
 import { useState, useRef, useCallback } from "react";
 import { useEditor } from "../state/editorContext";
-import { gridToJson, validateDotArtJson } from "../utils/jsonSerializer";
+import {
+  gridToJson,
+  layersToJson,
+  validateDotArtJson,
+  isLayeredJson,
+} from "../utils/jsonSerializer";
 import { gridToPngBlob } from "../utils/exportPng";
-import type { DotArtJson } from "../state/types";
+import type { DotArtJson, LayeredDotArtJson } from "../state/types";
 
 export default function ImportExportPanel() {
   const { state, dispatch } = useEditor();
@@ -19,7 +24,10 @@ export default function ImportExportPanel() {
   }, []);
 
   const handleExport = () => {
-    const json = gridToJson(state.grid, state.palette);
+    const json =
+      state.layers.length > 1
+        ? layersToJson(state.layers, state.palette)
+        : gridToJson(state.grid, state.palette);
     const text = JSON.stringify(json, null, 2);
     setJsonText(text);
     setError("");
@@ -35,7 +43,11 @@ export default function ImportExportPanel() {
         setFeedback("");
         return;
       }
-      dispatch({ type: "IMPORT_JSON", data: parsed as DotArtJson });
+      if (isLayeredJson(parsed)) {
+        dispatch({ type: "IMPORT_LAYERED_JSON", data: parsed as LayeredDotArtJson });
+      } else {
+        dispatch({ type: "IMPORT_JSON", data: parsed as DotArtJson });
+      }
       setError("");
       showFeedback("Imported");
     } catch {
@@ -45,7 +57,10 @@ export default function ImportExportPanel() {
   };
 
   const handleDownload = () => {
-    const json = gridToJson(state.grid, state.palette);
+    const json =
+      state.layers.length > 1
+        ? layersToJson(state.layers, state.palette)
+        : gridToJson(state.grid, state.palette);
     const text = JSON.stringify(json, null, 2);
     const blob = new Blob([text], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -71,7 +86,10 @@ export default function ImportExportPanel() {
   };
 
   const handleCopy = async () => {
-    const json = gridToJson(state.grid, state.palette);
+    const json =
+      state.layers.length > 1
+        ? layersToJson(state.layers, state.palette)
+        : gridToJson(state.grid, state.palette);
     const text = JSON.stringify(json, null, 2);
     await navigator.clipboard.writeText(text);
     showFeedback("Copied!");

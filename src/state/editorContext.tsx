@@ -1,6 +1,6 @@
 import { createContext, useContext, useReducer, useEffect, useRef, type ReactNode } from "react";
 import type { EditorState, EditorAction } from "./types";
-import { editorReducer, createInitialState } from "./editorReducer";
+import { editorReducer, createInitialState, flattenLayers } from "./editorReducer";
 import { saveState, loadState } from "../utils/persistence";
 
 const EditorContext = createContext<{
@@ -12,10 +12,14 @@ function createRestoredState(): EditorState {
   const base = createInitialState(16);
   const saved = loadState();
   if (!saved) return base;
+  const layers = saved.layers ?? base.layers;
+  const canvasSize = saved.canvasSize ?? base.canvasSize;
   return {
     ...base,
-    canvasSize: saved.canvasSize ?? base.canvasSize,
-    grid: saved.grid ?? base.grid,
+    canvasSize,
+    layers,
+    activeLayerIndex: saved.activeLayerIndex ?? 0,
+    grid: flattenLayers(layers, canvasSize),
     palette: saved.palette ?? base.palette,
     selectedColor: saved.selectedColor ?? base.selectedColor,
   };
@@ -30,7 +34,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     saveTimer.current = setTimeout(() => saveState(state), 500);
     return () => clearTimeout(saveTimer.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.grid, state.palette, state.canvasSize, state.selectedColor]);
+  }, [state.layers, state.palette, state.canvasSize, state.selectedColor, state.activeLayerIndex]);
 
   return <EditorContext.Provider value={{ state, dispatch }}>{children}</EditorContext.Provider>;
 }

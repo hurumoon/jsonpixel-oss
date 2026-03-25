@@ -106,7 +106,8 @@ export function useCanvasInteraction(
         )
           return;
         const fillKey = state.selectedColor;
-        const cells = floodFill(state.grid, cell.row, cell.col, fillKey);
+        const activeGrid = state.layers[state.activeLayerIndex].grid;
+        const cells = floodFill(activeGrid, cell.row, cell.col, fillKey);
         if (cells.length > 0) {
           dispatch({ type: "SET_PIXELS", pixels: cells.map((c) => ({ ...c, key: fillKey })) });
         }
