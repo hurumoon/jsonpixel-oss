@@ -181,9 +181,9 @@ describe("editorReducer", () => {
       expect(next.showGrid).toBe(false);
     });
 
-    it("SET_ZOOM clamps between 1 and 100", () => {
+    it("SET_ZOOM clamps between MIN_ZOOM and MAX_ZOOM", () => {
       const state = makeState();
-      expect(editorReducer(state, { type: "SET_ZOOM", zoom: 0 }).zoom).toBe(1);
+      expect(editorReducer(state, { type: "SET_ZOOM", zoom: 0 }).zoom).toBe(0.1);
       expect(editorReducer(state, { type: "SET_ZOOM", zoom: 200 }).zoom).toBe(100);
       expect(editorReducer(state, { type: "SET_ZOOM", zoom: 50 }).zoom).toBe(50);
     });
