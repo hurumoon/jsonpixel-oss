@@ -2,12 +2,13 @@ import { useRef, useCallback, type RefObject } from "react";
 import type { EditorState, EditorAction } from "../state/types";
 import { screenToGrid, bresenhamLine } from "../utils/canvasHelpers";
 import { floodFill } from "../utils/floodFill";
-import { MIN_ZOOM, MAX_ZOOM } from "../constants";
+import { MIN_ZOOM, MAX_ZOOM, MAX_FILL_CELLS } from "../constants";
 
 export function useCanvasInteraction(
   state: EditorState,
   dispatch: React.Dispatch<EditorAction>,
   canvasRef: RefObject<HTMLCanvasElement | null>,
+  onFillLimitReached?: () => void,
 ) {
   const isDrawing = useRef(false);
   const isPanning = useRef(false);
@@ -108,9 +109,12 @@ export function useCanvasInteraction(
           return;
         const fillKey = state.selectedColor;
         const activeGrid = state.layers[state.activeLayerIndex].grid;
-        const cells = floodFill(activeGrid, cell.row, cell.col, fillKey);
-        if (cells.length > 0) {
-          dispatch({ type: "SET_PIXELS", pixels: cells.map((c) => ({ ...c, key: fillKey })) });
+        const result = floodFill(activeGrid, cell.row, cell.col, fillKey);
+        if (result.cells.length > 0) {
+          dispatch({ type: "SET_PIXELS", pixels: result.cells.map((c) => ({ ...c, key: fillKey })) });
+        }
+        if (result.limitReached) {
+          onFillLimitReached?.();
         }
         return;
       }
