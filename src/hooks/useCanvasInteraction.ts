@@ -2,7 +2,7 @@ import { useRef, useCallback, type RefObject } from "react";
 import type { EditorState, EditorAction } from "../state/types";
 import { screenToGrid, bresenhamLine } from "../utils/canvasHelpers";
 import { floodFill } from "../utils/floodFill";
-import { MIN_ZOOM, MAX_ZOOM, MAX_FILL_CELLS } from "../constants";
+import { MIN_ZOOM, MAX_ZOOM } from "../constants";
 
 export function useCanvasInteraction(
   state: EditorState,

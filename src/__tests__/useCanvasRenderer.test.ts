@@ -31,9 +31,7 @@ class FakeOffscreenCanvas {
 
 class FakeCtx {
   calls: { method: string; args: unknown[] }[] = [];
-  private canvas: FakeOffscreenCanvas;
-  constructor(canvas: FakeOffscreenCanvas) {
-    this.canvas = canvas;
+  constructor(_canvas: FakeOffscreenCanvas) {
   }
   createImageData(w: number, h: number) {
     return new FakeImageData(w, h);
