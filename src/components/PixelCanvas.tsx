@@ -27,7 +27,7 @@ export default function PixelCanvas() {
 
   const handleFillLimitReached = useCallback(() => {
     setFillWarning(
-      `塗りつぶしが上限（${MAX_FILL_CELLS.toLocaleString()}セル）に達したため、一部のみ塗りつぶされました`,
+      `Fill stopped at ${MAX_FILL_CELLS.toLocaleString()} cell limit — only a partial area was filled`,
     );
     clearTimeout(fillWarningTimer.current);
     fillWarningTimer.current = setTimeout(() => setFillWarning(""), 4000);
