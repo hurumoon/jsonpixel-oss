@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { floodFill } from "../utils/floodFill";
 
 describe("floodFill", () => {
@@ -54,6 +54,35 @@ describe("floodFill", () => {
     ];
     const result = floodFill(grid, 1, 1, "R");
     expect(result.cells).toHaveLength(9);
+    expect(result.limitReached).toBe(false);
+  });
+
+  it("returns limitReached true when cell count exceeds MAX_FILL_CELLS", async () => {
+    const constants = await import("../constants");
+    const original = constants.MAX_FILL_CELLS;
+    // Temporarily set limit to 4
+    Object.defineProperty(constants, "MAX_FILL_CELLS", { value: 4, writable: true });
+    try {
+      const grid = [
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."],
+      ];
+      const result = floodFill(grid, 0, 0, "R");
+      expect(result.cells).toHaveLength(4);
+      expect(result.limitReached).toBe(true);
+    } finally {
+      Object.defineProperty(constants, "MAX_FILL_CELLS", { value: original, writable: true });
+    }
+  });
+
+  it("returns limitReached false when fill completes within limit", () => {
+    const grid = [
+      [".", "R"],
+      ["R", "R"],
+    ];
+    const result = floodFill(grid, 0, 0, "G");
+    expect(result.cells).toHaveLength(1);
     expect(result.limitReached).toBe(false);
   });
 });

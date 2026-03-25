@@ -269,4 +269,67 @@ describe("useCanvasInteraction", () => {
       expect.objectContaining({ type: "SET_COLOR", key: "R" }),
     );
   });
+
+  it("calls onFillLimitReached when flood fill hits the limit", async () => {
+    const constants = await import("../constants");
+    const original = constants.MAX_FILL_CELLS;
+    // Set a very low limit so the 16x16 grid triggers it
+    Object.defineProperty(constants, "MAX_FILL_CELLS", { value: 3, writable: true });
+    try {
+      const state = makeState({
+        activeTool: "fill",
+        zoom: 20,
+        panOffset: { x: 0, y: 0 },
+        selectedColor: "R",
+      });
+      const onFillLimitReached = vi.fn();
+      const { result } = renderHook(() =>
+        useCanvasInteraction(state, dispatch, canvasRef, onFillLimitReached),
+      );
+
+      act(() => {
+        result.current.onPointerDown(
+          makePointerEvent("pointerdown", { clientX: 10, clientY: 10 }),
+        );
+      });
+
+      expect(dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "SET_PIXELS" }),
+      );
+      expect(onFillLimitReached).toHaveBeenCalledTimes(1);
+    } finally {
+      Object.defineProperty(constants, "MAX_FILL_CELLS", { value: original, writable: true });
+    }
+  });
+
+  it("does not call onFillLimitReached when fill completes within limit", () => {
+    // Fill a single isolated cell — well within limit
+    const initState = createInitialState(3);
+    initState.layers[0].grid[0][0] = ".";
+    initState.layers[0].grid[0][1] = "R";
+    initState.layers[0].grid[1][0] = "R";
+    const state = makeState({
+      ...initState,
+      activeTool: "fill",
+      zoom: 100,
+      panOffset: { x: 0, y: 0 },
+      selectedColor: "G",
+      canvasSize: 3,
+    });
+    const onFillLimitReached = vi.fn();
+    const { result } = renderHook(() =>
+      useCanvasInteraction(state, dispatch, canvasRef, onFillLimitReached),
+    );
+
+    act(() => {
+      result.current.onPointerDown(
+        makePointerEvent("pointerdown", { clientX: 50, clientY: 50 }),
+      );
+    });
+
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "SET_PIXELS" }),
+    );
+    expect(onFillLimitReached).not.toHaveBeenCalled();
+  });
 });
