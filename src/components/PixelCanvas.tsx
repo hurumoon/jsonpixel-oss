@@ -47,6 +47,7 @@ export default function PixelCanvas() {
 
   const rafRef = useRef<number>(0);
   const bufferRef = useRef<OffscreenCanvas | null>(null);
+  const paintRef = useRef<() => void>(() => {});
 
   const paint = useCallback(() => {
     const canvas = canvasRef.current;
@@ -115,7 +116,10 @@ export default function PixelCanvas() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [render, state.palette, state.zoom, state.panOffset, strokePixels]);
 
-  // Resize observer
+  // Keep paintRef in sync with latest paint callback
+  paintRef.current = paint;
+
+  // Resize observer — registered once; uses paintRef to avoid re-subscription on every state change
   useEffect(() => {
     const container = containerRef.current;
     const canvas = canvasRef.current;
@@ -124,17 +128,21 @@ export default function PixelCanvas() {
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        canvas.width = width * devicePixelRatio;
-        canvas.height = height * devicePixelRatio;
+        const newW = Math.round(width * devicePixelRatio);
+        const newH = Math.round(height * devicePixelRatio);
+        if (canvas.width === newW && canvas.height === newH) continue;
+        canvas.width = newW;
+        canvas.height = newH;
         canvas.style.width = `${width}px`;
         canvas.style.height = `${height}px`;
         cancelAnimationFrame(rafRef.current);
-        rafRef.current = requestAnimationFrame(paint);
+        rafRef.current = requestAnimationFrame(() => paintRef.current());
       }
     });
     observer.observe(container);
     return () => observer.disconnect();
-  }, [paint]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Repaint on state change
   useEffect(() => {
