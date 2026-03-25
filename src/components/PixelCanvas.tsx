@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback } from "react";
 import { useEditor } from "../state/editorContext";
 import { useCanvasRenderer } from "../hooks/useCanvasRenderer";
 import { useCanvasInteraction } from "../hooks/useCanvasInteraction";
+import { MIN_ZOOM, MAX_ZOOM } from "../constants";
 import type { PaletteEntry } from "../state/types";
 
 const CURSOR_MAP = {
@@ -146,7 +147,7 @@ export default function PixelCanvas() {
     const { width, height } = container.getBoundingClientRect();
     const padding = 40;
     const available = Math.min(width, height) - padding * 2;
-    const newZoom = Math.max(1, Math.min(100, available / state.canvasSize));
+    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, available / state.canvasSize));
     const totalSize = state.canvasSize * newZoom;
     const newPanX = (width - totalSize) / 2;
     const newPanY = (height - totalSize) / 2;

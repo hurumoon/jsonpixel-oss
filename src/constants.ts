@@ -10,8 +10,8 @@ export const MIN_CANVAS_SIZE = 10;
 /** Maximum canvas size (in pixels) */
 export const MAX_CANVAS_SIZE = 1000;
 
-/** Minimum zoom level */
-export const MIN_ZOOM = 1;
+/** Minimum zoom level (allow fractional zoom so large canvases fit on small screens) */
+export const MIN_ZOOM = 0.1;
 
 /** Maximum zoom level */
 export const MAX_ZOOM = 100;
