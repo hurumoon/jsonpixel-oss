@@ -2,6 +2,7 @@ import { useRef, useCallback, type RefObject } from "react";
 import type { EditorState, EditorAction } from "../state/types";
 import { screenToGrid, bresenhamLine } from "../utils/canvasHelpers";
 import { floodFill } from "../utils/floodFill";
+import { MIN_ZOOM, MAX_ZOOM } from "../constants";
 
 export function useCanvasInteraction(
   state: EditorState,
@@ -172,7 +173,7 @@ export function useCanvasInteraction(
 
           // Calculate new zoom
           const scale = dist / pinchStartDist.current;
-          const newZoom = Math.max(1, Math.min(100, pinchStartZoom.current * scale));
+          const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, pinchStartZoom.current * scale));
 
           // Calculate new pan (zoom toward pinch center + pan offset)
           const zoomScale = newZoom / pinchStartZoom.current;
@@ -261,7 +262,7 @@ export function useCanvasInteraction(
       const oldZoom = state.zoom;
       const delta = e.deltaY > 0 ? -1 : 1;
       const factor = 1.1;
-      const newZoom = Math.max(1, Math.min(100, delta > 0 ? oldZoom * factor : oldZoom / factor));
+      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, delta > 0 ? oldZoom * factor : oldZoom / factor));
 
       // Zoom toward mouse position
       const scale = newZoom / oldZoom;
