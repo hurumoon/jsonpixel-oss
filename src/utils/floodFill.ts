@@ -1,4 +1,4 @@
-const MAX_FILL_CELLS = 500_000;
+import { MAX_FILL_CELLS } from "../constants";
 
 export function floodFill(
   grid: string[][],

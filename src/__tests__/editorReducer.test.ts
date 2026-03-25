@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { editorReducer, createInitialState, createEmptyGrid, flattenLayers } from "../state/editorReducer";
 import type { EditorState } from "../state/types";
+import { MAX_UNDO, MIN_CANVAS_SIZE, MAX_CANVAS_SIZE, MIN_ZOOM, MAX_ZOOM } from "../constants";
 
 function makeState(overrides: Partial<EditorState> = {}): EditorState {
   return { ...createInitialState(4), ...overrides };
@@ -426,6 +427,191 @@ describe("layer operations", () => {
       expect(next.layers[1].name).toBe("Foreground");
       expect(next.layers[1].grid[0]).toEqual([".", "G"]);
       expect(next.grid).toEqual([["R", "G"], ["G", "R"]]);
+    });
+  });
+
+  describe("MOVE_LAYER edge cases", () => {
+    it("ignores out-of-bounds toIndex", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      const next = editorReducer(state, { type: "MOVE_LAYER", fromIndex: 0, toIndex: 5 });
+      expect(next).toBe(state);
+    });
+
+    it("ignores negative fromIndex", () => {
+      const state = makeState();
+      const next = editorReducer(state, { type: "MOVE_LAYER", fromIndex: -1, toIndex: 0 });
+      expect(next).toBe(state);
+    });
+
+    it("adjusts activeLayerIndex when moving layer from above active to below", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      // Active is layer 2, move layer 2 to 0
+      state = editorReducer(state, { type: "SET_ACTIVE_LAYER", index: 1 });
+      const next = editorReducer(state, { type: "MOVE_LAYER", fromIndex: 2, toIndex: 0 });
+      expect(next.activeLayerIndex).toBe(2);
+    });
+
+    it("updates composite grid after move", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 0, key: "R" });
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 0, key: "G" });
+      // Layer 1 (G) is on top, grid shows G
+      expect(state.grid[0][0]).toBe("G");
+      // Move layer 1 below layer 0
+      const next = editorReducer(state, { type: "MOVE_LAYER", fromIndex: 1, toIndex: 0 });
+      // Now layer 0 (R, originally index 0) is on top
+      expect(next.grid[0][0]).toBe("R");
+    });
+  });
+
+  describe("MERGE_LAYER_DOWN edge cases", () => {
+    it("ignores out-of-bounds index", () => {
+      const state = makeState();
+      const next = editorReducer(state, { type: "MERGE_LAYER_DOWN", index: 5 });
+      expect(next).toBe(state);
+    });
+
+    it("adjusts activeLayerIndex when merging active layer", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      // Active is layer 2
+      const next = editorReducer(state, { type: "MERGE_LAYER_DOWN", index: 2 });
+      expect(next.layers).toHaveLength(2);
+      expect(next.activeLayerIndex).toBe(1);
+    });
+
+    it("preserves empty cells from upper layer during merge", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 0, key: "R" });
+      state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 1, key: "G" });
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      // Upper layer has only one pixel at (0,0)
+      state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: 0, key: "B" });
+      const next = editorReducer(state, { type: "MERGE_LAYER_DOWN", index: 1 });
+      // (0,0) should be overwritten by upper, (0,1) preserved from lower
+      expect(next.layers[0].grid[0][0]).toBe("B");
+      expect(next.layers[0].grid[0][1]).toBe("G");
+    });
+  });
+
+  describe("RENAME_LAYER edge cases", () => {
+    it("ignores out-of-bounds index", () => {
+      const state = makeState();
+      const next = editorReducer(state, { type: "RENAME_LAYER", index: 5, name: "test" });
+      expect(next).toBe(state);
+    });
+
+    it("ignores negative index", () => {
+      const state = makeState();
+      const next = editorReducer(state, { type: "RENAME_LAYER", index: -1, name: "test" });
+      expect(next).toBe(state);
+    });
+  });
+
+  describe("TOGGLE_LAYER_VISIBILITY edge cases", () => {
+    it("ignores out-of-bounds index", () => {
+      const state = makeState();
+      const next = editorReducer(state, { type: "TOGGLE_LAYER_VISIBILITY", index: 5 });
+      expect(next).toBe(state);
+    });
+  });
+
+  describe("TOGGLE_BOLD_GRID", () => {
+    it("toggles boldGrid", () => {
+      const state = makeState();
+      expect(state.boldGrid).toBe(false);
+      const next = editorReducer(state, { type: "TOGGLE_BOLD_GRID" });
+      expect(next.boldGrid).toBe(true);
+      const next2 = editorReducer(next, { type: "TOGGLE_BOLD_GRID" });
+      expect(next2.boldGrid).toBe(false);
+    });
+  });
+
+  describe("SET_PAN", () => {
+    it("clamps pan offset to canvas bounds", () => {
+      const state = makeState();
+      const totalPx = state.canvasSize * state.zoom;
+      const next = editorReducer(state, { type: "SET_PAN", x: totalPx + 100, y: -(totalPx + 100) });
+      expect(next.panOffset.x).toBe(totalPx);
+      expect(next.panOffset.y).toBe(-totalPx);
+    });
+  });
+
+  describe("SET_VIEW", () => {
+    it("clamps zoom and pan simultaneously", () => {
+      const state = makeState();
+      const next = editorReducer(state, { type: "SET_VIEW", zoom: 200, x: 999999, y: -999999 });
+      expect(next.zoom).toBe(MAX_ZOOM);
+      const total = state.canvasSize * MAX_ZOOM;
+      expect(next.panOffset.x).toBe(total);
+      expect(next.panOffset.y).toBe(-total);
+    });
+
+    it("clamps minimum zoom", () => {
+      const state = makeState();
+      const next = editorReducer(state, { type: "SET_VIEW", zoom: -5, x: 0, y: 0 });
+      expect(next.zoom).toBe(MIN_ZOOM);
+    });
+  });
+
+  describe("REMOVE_LAYER edge cases", () => {
+    it("ignores out-of-bounds index", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      const next = editorReducer(state, { type: "REMOVE_LAYER", index: 5 });
+      expect(next).toBe(state);
+    });
+
+    it("ignores negative index", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      const next = editorReducer(state, { type: "REMOVE_LAYER", index: -1 });
+      expect(next).toBe(state);
+    });
+
+    it("clamps activeLayerIndex when removing the last layer", () => {
+      let state = makeState();
+      state = editorReducer(state, { type: "ADD_LAYER" });
+      // Active is layer 1 (last)
+      expect(state.activeLayerIndex).toBe(1);
+      const next = editorReducer(state, { type: "REMOVE_LAYER", index: 1 });
+      expect(next.layers).toHaveLength(1);
+      expect(next.activeLayerIndex).toBe(0);
+    });
+  });
+
+  describe("undo stack limit", () => {
+    it("limits undo stack to MAX_UNDO entries", () => {
+      let state = makeState();
+      for (let i = 0; i < MAX_UNDO + 10; i++) {
+        state = editorReducer(state, { type: "SET_PIXEL", row: 0, col: i % state.canvasSize, key: i % 2 === 0 ? "R" : "." });
+      }
+      expect(state.undoStack.length).toBeLessThanOrEqual(MAX_UNDO);
+    });
+  });
+
+  describe("constants are used correctly", () => {
+    it("SET_CANVAS_SIZE clamps to MIN_CANVAS_SIZE", () => {
+      const state = makeState();
+      const next = editorReducer(state, { type: "SET_CANVAS_SIZE", size: 1 });
+      expect(next.canvasSize).toBe(MIN_CANVAS_SIZE);
+    });
+
+    it("SET_CANVAS_SIZE clamps to MAX_CANVAS_SIZE", () => {
+      const state = makeState();
+      const next = editorReducer(state, { type: "SET_CANVAS_SIZE", size: 9999 });
+      expect(next.canvasSize).toBe(MAX_CANVAS_SIZE);
+    });
+
+    it("SET_ZOOM clamps to MIN_ZOOM and MAX_ZOOM", () => {
+      const state = makeState();
+      expect(editorReducer(state, { type: "SET_ZOOM", zoom: -10 }).zoom).toBe(MIN_ZOOM);
+      expect(editorReducer(state, { type: "SET_ZOOM", zoom: 999 }).zoom).toBe(MAX_ZOOM);
     });
   });
 });

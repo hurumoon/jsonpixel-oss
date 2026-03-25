@@ -12,7 +12,7 @@ interface PersistedState {
   grid?: string[][];
 }
 
-export function saveState(state: EditorState): void {
+export function saveState(state: Pick<EditorState, "canvasSize" | "layers" | "activeLayerIndex" | "palette" | "selectedColor">): void {
   try {
     const data: PersistedState = {
       canvasSize: state.canvasSize,

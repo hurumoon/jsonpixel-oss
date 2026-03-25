@@ -1,6 +1,5 @@
 import type { EditorState, EditorAction, PixelDiff, PaletteEntry, Layer } from "./types";
-
-const MAX_UNDO = 50;
+import { MAX_UNDO, MIN_CANVAS_SIZE, MAX_CANVAS_SIZE, MIN_ZOOM, MAX_ZOOM } from "../constants";
 
 export function createEmptyGrid(size: number): string[][] {
   return Array.from({ length: size }, () => Array(size).fill("."));
@@ -158,7 +157,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       };
 
     case "SET_CANVAS_SIZE": {
-      const size = Math.max(10, Math.min(1000, action.size));
+      const size = Math.max(MIN_CANVAS_SIZE, Math.min(MAX_CANVAS_SIZE, action.size));
       const newLayers = state.layers.map((layer) => {
         const newGrid = createEmptyGrid(size);
         const copySize = Math.min(size, state.canvasSize);
@@ -252,7 +251,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       return { ...state, boldGrid: !state.boldGrid };
 
     case "SET_ZOOM":
-      return { ...state, zoom: Math.max(1, Math.min(100, action.zoom)) };
+      return { ...state, zoom: Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, action.zoom)) };
 
     case "SET_PAN": {
       const totalPx = state.canvasSize * state.zoom;
@@ -262,7 +261,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     }
 
     case "SET_VIEW": {
-      const newZoom = Math.max(1, Math.min(100, action.zoom));
+      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, action.zoom));
       const total = state.canvasSize * newZoom;
       const cx = Math.max(-total, Math.min(total, action.x));
       const cy = Math.max(-total, Math.min(total, action.y));
