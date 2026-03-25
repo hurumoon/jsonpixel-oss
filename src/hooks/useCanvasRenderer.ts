@@ -58,8 +58,11 @@ export function useCanvasRenderer(
       // For small zoom (<= 4), use ImageData for pixel-level rendering (much faster)
       // For larger zoom, use fillRect (need to draw bigger squares)
       if (zoom <= 4) {
-        const imgW = visibleCols * zoom;
-        const imgH = visibleRows * zoom;
+        // Use integer cell size for ImageData indexing; fractional zoom is
+        // handled by scaling the final drawImage call.
+        const cellPx = Math.max(1, Math.round(zoom));
+        const imgW = visibleCols * cellPx;
+        const imgH = visibleRows * cellPx;
         if (imgW <= 0 || imgH <= 0) return;
 
         // Use offscreen canvas to build the image
@@ -105,10 +108,10 @@ export function useCanvasRenderer(
               }
             }
 
-            // Fill the zoom x zoom block
-            for (let py = 0; py < zoom; py++) {
-              for (let px = 0; px < zoom; px++) {
-                const idx = ((localR * zoom + py) * imgW + (localC * zoom + px)) * 4;
+            // Fill the cellPx x cellPx block (always integer-indexed)
+            for (let py = 0; py < cellPx; py++) {
+              for (let px = 0; px < cellPx; px++) {
+                const idx = ((localR * cellPx + py) * imgW + (localC * cellPx + px)) * 4;
                 data[idx] = cr;
                 data[idx + 1] = cg;
                 data[idx + 2] = cb;
@@ -119,9 +122,12 @@ export function useCanvasRenderer(
         }
 
         offCtx.putImageData(imageData, 0, 0);
+        // Draw with fractional zoom scaling to handle non-integer zoom levels
         const destX = panOffset.x + startCol * zoom;
         const destY = panOffset.y + startRow * zoom;
-        ctx.drawImage(offscreenRef.current, destX, destY);
+        const destW = visibleCols * zoom;
+        const destH = visibleRows * zoom;
+        ctx.drawImage(offscreenRef.current, destX, destY, destW, destH);
       } else {
         // Larger zoom: fillRect is fine, fewer cells visible
         for (let r = startRow; r < endRow; r++) {
