@@ -1,4 +1,5 @@
 import type { DotArtJson, LayeredDotArtJson, PaletteEntry, Layer } from "../state/types";
+import { STRINGS } from "../strings";
 
 export function gridToJson(grid: string[][], palette: PaletteEntry[]): DotArtJson {
   const usedKeys = new Set<string>();
@@ -47,11 +48,11 @@ export function layersToJson(layers: Layer[], palette: PaletteEntry[]): LayeredD
 export function validateDotArtJson(json: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   if (!json || typeof json !== "object") {
-    return { valid: false, errors: ["JSONオブジェクトではありません"] };
+    return { valid: false, errors: [STRINGS.ERR_NOT_OBJECT] };
   }
   const obj = json as Record<string, unknown>;
   if (!obj.palette || typeof obj.palette !== "object" || Array.isArray(obj.palette)) {
-    errors.push("paletteが不正です");
+    errors.push(STRINGS.ERR_INVALID_PALETTE);
     return { valid: false, errors };
   }
 
@@ -61,33 +62,33 @@ export function validateDotArtJson(json: unknown): { valid: boolean; errors: str
   }
 
   if (!Array.isArray(obj.rows) || obj.rows.length === 0) {
-    errors.push("rowsが不正です");
+    errors.push(STRINGS.ERR_INVALID_ROWS);
     return { valid: false, errors };
   }
   const rows = obj.rows as string[];
   const width = rows[0].length;
   if (width !== rows.length) {
-    errors.push(`正方形ではありません (${width}x${rows.length})`);
+    errors.push(STRINGS.ERR_NOT_SQUARE(width, rows.length));
   }
   const palette = obj.palette as Record<string, string>;
   if ("." in palette) {
-    errors.push("paletteに'.'は使用できません");
+    errors.push(STRINGS.ERR_DOT_IN_PALETTE);
   }
   for (const [key, color] of Object.entries(palette)) {
-    if (key.length !== 1) errors.push(`パレットキー '${key}' は1文字である必要があります`);
-    if (!/^#[0-9A-Fa-f]{6}$/.test(color)) errors.push(`不正なカラー: ${color}`);
+    if (key.length !== 1) errors.push(STRINGS.ERR_KEY_NOT_SINGLE_CHAR(key));
+    if (!/^#[0-9A-Fa-f]{6}$/.test(color)) errors.push(STRINGS.ERR_INVALID_COLOR(color));
   }
   for (let i = 0; i < rows.length; i++) {
     if (typeof rows[i] !== "string") {
-      errors.push(`row[${i}]が文字列ではありません`);
+      errors.push(STRINGS.ERR_ROW_NOT_STRING(i));
       continue;
     }
     if (rows[i].length !== width) {
-      errors.push(`row[${i}]の長さが不一致 (${rows[i].length} != ${width})`);
+      errors.push(STRINGS.ERR_ROW_LENGTH_MISMATCH(i, rows[i].length, width));
     }
     for (const ch of rows[i]) {
       if (ch !== "." && !(ch in palette)) {
-        errors.push(`未定義のキー '${ch}' がrow[${i}]にあります`);
+        errors.push(STRINGS.ERR_UNDEFINED_KEY_IN_ROW(ch, i));
       }
     }
   }
@@ -97,32 +98,32 @@ export function validateDotArtJson(json: unknown): { valid: boolean; errors: str
 export function validateLayeredDotArtJson(json: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   if (!json || typeof json !== "object") {
-    return { valid: false, errors: ["JSONオブジェクトではありません"] };
+    return { valid: false, errors: [STRINGS.ERR_NOT_OBJECT] };
   }
   const obj = json as Record<string, unknown>;
   if (!obj.palette || typeof obj.palette !== "object" || Array.isArray(obj.palette)) {
-    errors.push("paletteが不正です");
+    errors.push(STRINGS.ERR_INVALID_PALETTE);
     return { valid: false, errors };
   }
   if (!Array.isArray(obj.layers) || obj.layers.length === 0) {
-    errors.push("layersが不正です");
+    errors.push(STRINGS.ERR_INVALID_LAYERS);
     return { valid: false, errors };
   }
 
   const palette = obj.palette as Record<string, string>;
   if ("." in palette) {
-    errors.push("paletteに'.'は使用できません");
+    errors.push(STRINGS.ERR_DOT_IN_PALETTE);
   }
   for (const [key, color] of Object.entries(palette)) {
-    if (key.length !== 1) errors.push(`パレットキー '${key}' は1文字である必要があります`);
-    if (!/^#[0-9A-Fa-f]{6}$/.test(color)) errors.push(`不正なカラー: ${color}`);
+    if (key.length !== 1) errors.push(STRINGS.ERR_KEY_NOT_SINGLE_CHAR(key));
+    if (!/^#[0-9A-Fa-f]{6}$/.test(color)) errors.push(STRINGS.ERR_INVALID_COLOR(color));
   }
 
   const layersArr = obj.layers as Record<string, unknown>[];
   // Use first layer to determine size
   const firstLayer = layersArr[0];
   if (!firstLayer || !Array.isArray(firstLayer.rows) || (firstLayer.rows as string[]).length === 0) {
-    errors.push("layers[0]のrowsが不正です");
+    errors.push(STRINGS.ERR_INVALID_FIRST_LAYER_ROWS);
     return { valid: false, errors };
   }
   const firstRows = firstLayer.rows as string[];
@@ -130,40 +131,40 @@ export function validateLayeredDotArtJson(json: unknown): { valid: boolean; erro
   const expectedSize = firstRows.length;
 
   if (width !== expectedSize) {
-    errors.push(`正方形ではありません (${width}x${expectedSize})`);
+    errors.push(STRINGS.ERR_NOT_SQUARE(width, expectedSize));
   }
 
   for (let li = 0; li < layersArr.length; li++) {
     const layer = layersArr[li];
     if (!layer || typeof layer !== "object") {
-      errors.push(`layers[${li}]が不正です`);
+      errors.push(STRINGS.ERR_INVALID_LAYER(li));
       continue;
     }
     if (typeof layer.name !== "string") {
-      errors.push(`layers[${li}].nameが不正です`);
+      errors.push(STRINGS.ERR_INVALID_LAYER_NAME(li));
     }
     if (typeof layer.visible !== "boolean") {
-      errors.push(`layers[${li}].visibleが不正です`);
+      errors.push(STRINGS.ERR_INVALID_LAYER_VISIBLE(li));
     }
     if (!Array.isArray(layer.rows)) {
-      errors.push(`layers[${li}].rowsが不正です`);
+      errors.push(STRINGS.ERR_INVALID_LAYER_ROWS(li));
       continue;
     }
     const rows = layer.rows as string[];
     if (rows.length !== expectedSize) {
-      errors.push(`layers[${li}]のサイズが不一致 (${rows.length} != ${expectedSize})`);
+      errors.push(STRINGS.ERR_LAYER_SIZE_MISMATCH(li, rows.length, expectedSize));
     }
     for (let i = 0; i < rows.length; i++) {
       if (typeof rows[i] !== "string") {
-        errors.push(`layers[${li}].rows[${i}]が文字列ではありません`);
+        errors.push(STRINGS.ERR_LAYER_ROW_NOT_STRING(li, i));
         continue;
       }
       if (rows[i].length !== width) {
-        errors.push(`layers[${li}].rows[${i}]の長さが不一致 (${rows[i].length} != ${width})`);
+        errors.push(STRINGS.ERR_LAYER_ROW_LENGTH_MISMATCH(li, i, rows[i].length, width));
       }
       for (const ch of rows[i]) {
         if (ch !== "." && !(ch in palette)) {
-          errors.push(`未定義のキー '${ch}' がlayers[${li}].rows[${i}]にあります`);
+          errors.push(STRINGS.ERR_UNDEFINED_KEY_IN_LAYER_ROW(ch, li, i));
         }
       }
     }

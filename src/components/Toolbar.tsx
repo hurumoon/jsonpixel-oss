@@ -1,6 +1,7 @@
 import { useEditor } from "../state/editorContext";
 import type { Tool } from "../state/types";
 import AboutDialog from "./AboutDialog";
+import { STRINGS } from "../strings";
 
 const tools: { tool: Tool; label: string; shortcut: string }[] = [
   { tool: "pen", label: "Pen", shortcut: "B" },
@@ -66,7 +67,7 @@ export default function Toolbar() {
         <button
           className="tool-btn"
           onClick={() => {
-            if (window.confirm("キャンバスをクリアしますか？")) {
+            if (window.confirm(STRINGS.CONFIRM_CLEAR_CANVAS)) {
               dispatch({ type: "CLEAR_CANVAS" });
             }
           }}
