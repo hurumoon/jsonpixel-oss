@@ -104,6 +104,13 @@ body,
   overflow: hidden;
 }
 
+.main-area > main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
 /* Sidebar */
 .sidebar {
   width: 220px;
