@@ -7,6 +7,7 @@ import {
   isLayeredJson,
 } from "../utils/jsonSerializer";
 import { gridToPngBlob } from "../utils/exportPng";
+import { gridToSvgBlob } from "../utils/exportSvg";
 import type { DotArtJson, LayeredDotArtJson } from "../state/types";
 import { PNG_EXPORT_TARGET_SIZE } from "../constants";
 import { STRINGS } from "../strings";
@@ -121,6 +122,21 @@ export default function ImportExportPanel() {
     }
   };
 
+  const handleSvgDownload = () => {
+    try {
+      const blob = gridToSvgBlob(state.grid, state.palette);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "dotart.svg";
+      a.click();
+      URL.revokeObjectURL(url);
+      showFeedback("Downloaded SVG");
+    } catch {
+      setError("SVG export failed");
+    }
+  };
+
   return (
     <div className="import-export-panel">
       <h3>Import / Export</h3>
@@ -139,6 +155,9 @@ export default function ImportExportPanel() {
         </button>
         <button className="tool-btn" onClick={handlePngDownload}>
           PNG
+        </button>
+        <button className="tool-btn" onClick={handleSvgDownload}>
+          SVG
         </button>
       </div>
       <button className="tool-btn file-btn" onClick={() => fileRef.current?.click()}>
