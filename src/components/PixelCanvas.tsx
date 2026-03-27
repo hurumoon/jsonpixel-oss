@@ -141,7 +141,6 @@ export default function PixelCanvas() {
     });
     observer.observe(container);
     return () => observer.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Repaint on state change

@@ -54,19 +54,24 @@ function AppContent() {
   return (
     <div className="app">
       <KeyboardHandler />
-      <Toolbar />
+      <header>
+        <h1 className="visually-hidden">JsonPixel - Dot Art Editor</h1>
+        <Toolbar />
+      </header>
       <div className="main-area">
         <div
           className={`sidebar-overlay ${sidebarOpen ? "open" : ""}`}
           onClick={() => setSidebarOpen(false)}
         />
-        <div className={`sidebar ${sidebarOpen ? "open" : ""}`}>
+        <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
           <LayerPanel />
           <PalettePanel />
           <SizeControl />
           <ImportExportPanel />
-        </div>
-        <PixelCanvas />
+        </aside>
+        <main>
+          <PixelCanvas />
+        </main>
         <button
           className="sidebar-toggle"
           onClick={() => setSidebarOpen((v) => !v)}
