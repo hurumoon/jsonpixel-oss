@@ -153,6 +153,7 @@ export function useCanvasInteraction(
       state.activeLayerIndex,
       dispatch,
       drawAt,
+      onFillLimitReached,
     ],
   );
 
