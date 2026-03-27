@@ -88,7 +88,7 @@ export default function AboutDialog() {
             </div>
 
             <div className="about-footer">
-              <div>Version: 1.0.0</div>
+              <div>Version: 1.0.1</div>
               <div>Stack: React + Vite</div>
             </div>
 
