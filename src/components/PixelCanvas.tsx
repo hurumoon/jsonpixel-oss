@@ -125,6 +125,7 @@ export default function PixelCanvas() {
     const canvas = canvasRef.current;
     if (!container || !canvas) return;
 
+    let isFirst = true;
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
@@ -135,6 +136,11 @@ export default function PixelCanvas() {
         canvas.height = newH;
         canvas.style.width = `${width}px`;
         canvas.style.height = `${height}px`;
+        // Fit to view on initial layout when container gets real dimensions
+        if (isFirst) {
+          isFirst = false;
+          fitToViewRef.current();
+        }
         cancelAnimationFrame(rafRef.current);
         rafRef.current = requestAnimationFrame(() => paintRef.current());
       }
@@ -163,6 +169,7 @@ export default function PixelCanvas() {
     const container = containerRef.current;
     if (!container) return;
     const { width, height } = container.getBoundingClientRect();
+    if (width === 0 || height === 0) return;
     const padding = 40;
     const available = Math.min(width, height) - padding * 2;
     const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, available / state.canvasSize));
@@ -171,6 +178,9 @@ export default function PixelCanvas() {
     const newPanY = (height - totalSize) / 2;
     dispatch({ type: "SET_VIEW", zoom: Math.round(newZoom * 100) / 100, x: newPanX, y: newPanY });
   }, [state.canvasSize, dispatch]);
+
+  const fitToViewRef = useRef(fitToView);
+  fitToViewRef.current = fitToView;
 
   // Fit to view when canvas size changes (e.g. import)
   useEffect(() => {
