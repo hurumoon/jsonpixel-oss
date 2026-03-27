@@ -55,7 +55,7 @@ function AppContent() {
     <div className="app">
       <KeyboardHandler />
       <header>
-        <h1 className="visually-hidden">JsonPixel - ドットアートエディタ</h1>
+        <h1 className="visually-hidden">JsonPixel - Dot Art Editor</h1>
         <Toolbar />
       </header>
       <div className="main-area">
