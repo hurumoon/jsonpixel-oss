@@ -605,6 +605,15 @@ body,
 
 /* Responsive: mobile layout */
 @media (max-width: 640px) {
+  .sidebar {
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .sidebar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
+  }
+
+
   .toolbar {
     gap: 6px;
     padding: 6px 8px;
