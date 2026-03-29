@@ -547,6 +547,15 @@ body,
   margin-right: 4px;
 }
 
+.about-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.about-link:hover {
+  text-decoration: underline;
+}
+
 .about-footer {
   border-top: 1px solid var(--border);
   padding-top: 12px;

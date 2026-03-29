@@ -87,6 +87,20 @@ export default function AboutDialog() {
               </div>
             </div>
 
+            <div className="about-section">
+              <div className="about-section-label">Skills</div>
+              <div className="about-section-value">
+                <a
+                  href="https://pixelpassion.jp/JsonPixel/SKILL.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="about-link"
+                >
+                  SKILL.md
+                </a>
+              </div>
+            </div>
+
             <div className="about-footer">
               <div>Version: 1.0.1</div>
               <div>Stack: React + Vite</div>
