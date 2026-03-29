@@ -88,7 +88,7 @@ export default function AboutDialog() {
             </div>
 
             <div className="about-section">
-              <div className="about-section-label">Skills</div>
+              <div className="about-section-label">Claude Skill</div>
               <div className="about-section-value">
                 <a
                   href="https://pixelpassion.jp/JsonPixel/SKILL.md"
