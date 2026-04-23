@@ -23,11 +23,11 @@ export default function AboutDialog() {
               ✕
             </button>
 
-            <h2 className="about-title">jsonpixel</h2>
+            <h2 className="about-title">JsonPixel</h2>
             <p className="about-subtitle">dot art editor</p>
             <p className="about-description">
               A web app for creating and editing dot art in JSON format.
-              Supports palette management, grid display, and PNG/JSON export.
+              Supports palette management, grid display, and PNG/JSON/SVG export.
             </p>
 
             <div className="about-section">
