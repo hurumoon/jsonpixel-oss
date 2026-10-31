@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useLayoutEffect, useCallback } from "react";
 import { useEditor } from "../state/editorContext";
 import { useCanvasRenderer } from "../hooks/useCanvasRenderer";
 import { useCanvasInteraction } from "../hooks/useCanvasInteraction";
@@ -48,6 +48,7 @@ export default function PixelCanvas() {
   const rafRef = useRef<number>(0);
   const bufferRef = useRef<OffscreenCanvas | null>(null);
   const paintRef = useRef<() => void>(() => {});
+  const fitToViewRef = useRef<() => void>(() => {});
 
   const paint = useCallback(() => {
     const canvas = canvasRef.current;
@@ -117,7 +118,9 @@ export default function PixelCanvas() {
   }, [render, state.palette, state.zoom, state.panOffset, strokePixels]);
 
   // Keep paintRef in sync with latest paint callback
-  paintRef.current = paint;
+  useLayoutEffect(() => {
+    paintRef.current = paint;
+  }, [paint]);
 
   // Resize observer — registered once; uses paintRef to avoid re-subscription on every state change
   useEffect(() => {
@@ -179,8 +182,9 @@ export default function PixelCanvas() {
     dispatch({ type: "SET_VIEW", zoom: Math.round(newZoom * 100) / 100, x: newPanX, y: newPanY });
   }, [state.canvasSize, dispatch]);
 
-  const fitToViewRef = useRef(fitToView);
-  fitToViewRef.current = fitToView;
+  useLayoutEffect(() => {
+    fitToViewRef.current = fitToView;
+  }, [fitToView]);
 
   // Fit to view when canvas size changes (e.g. import)
   useEffect(() => {

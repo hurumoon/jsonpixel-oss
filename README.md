@@ -19,8 +19,10 @@ JsonPixel は、ブラウザ上でドット絵を作成し、コンパクトな 
 
 ## セットアップ
 
+Node.js 24以降のLTS版とnpmを用意してください。
+
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -163,3 +165,13 @@ src/
 
 - `SKILL.md`: ドット絵 JSON を生成・解釈するための Claude Skill 定義
 - `ハート.json`: サンプル JSON
+
+## ライセンスとデータ
+
+JsonPixelのコードは[MIT License](./LICENSE)で公開します。依存ライブラリの表記は[THIRD_PARTY_LICENSES.txt](./public/THIRD_PARTY_LICENSES.txt)にまとめています。このファイルはビルド時に`dist/`にも含まれます。
+
+編集内容はブラウザのlocalStorageに保存します。アプリに画像・作品データをアップロードするサーバーや解析用の送信処理はありません。共有ボタンを押すと、ページのURLと紹介文をXの投稿画面へ渡します。利用者が作成・読み込んだ作品の権利は、アプリのMITライセンスとは別です。
+
+ローカル設定、環境変数ファイル、生成物はGit管理の対象外です。開発サーバーはローカルで使い、配布には`npm run build`で生成した`dist/`を使用してください。
+
+開発依存の`minimatch`は、GHSA-g3hv-75wg-m249に対応した11.0.1以降を`overrides`で指定しています。上流の依存が対応したら、この指定を再確認してください。
